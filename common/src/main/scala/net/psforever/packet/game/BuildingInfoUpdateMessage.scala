@@ -1,25 +1,11 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
 import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
-import net.psforever.types.PlanetSideEmpire
+import net.psforever.types.{PlanetSideEmpire, PlanetSideGeneratorState}
 import scodec.{Attempt, Codec, Err}
 import scodec.codecs._
 import shapeless.{::, HNil}
-
-/**
-  * An `Enumeration` `Codec` that represents that various states of a major facility's Generator.
-  */
-object PlanetSideGeneratorState extends Enumeration {
-  type Type = Value
-  val Normal,
-      Critical,
-      Destroyed,
-      Unk3
-       = Value
-
-  implicit val codec = PacketHelpers.createEnumerationCodec(this, uintL(2))
-}
 
 /**
   * na
@@ -87,8 +73,8 @@ final case class Additional3(unk1 : Boolean,
   * 064 - Health Module<br>
   * 128 - Pain Module<br>
   * `
-  * @param continent_guid the continent (zone)
-  * @param building_guid the building
+  * @param continent_id the continent (zone)
+  * @param building_map_id the map id of this building from the MPO files
   * @param ntu_level if the building has a silo, the amount of NTU in that silo;
   *                  NTU is reported in multiples of 10%;
   *                  valid for 0 (0%) to 10 (100%)
@@ -117,8 +103,8 @@ final case class Additional3(unk1 : Boolean,
   * @param boost_spawn_pain if the building has spawn tubes, the (boosted) strength of its enemy pain field
   * @param boost_generator_pain if the building has a generator, the (boosted) strength of its enemy pain field
   */
-final case class BuildingInfoUpdateMessage(continent_guid : PlanetSideGUID,
-                                           building_guid : PlanetSideGUID,
+final case class BuildingInfoUpdateMessage(continent_id : Int,
+                                           building_map_id : Int,
                                            ntu_level : Int,
                                            is_hacked : Boolean,
                                            empire_hack : PlanetSideEmpire.Value,
@@ -171,8 +157,8 @@ object BuildingInfoUpdateMessage extends Marshallable[BuildingInfoUpdateMessage]
     ).as[Additional3]
 
   implicit val codec : Codec[BuildingInfoUpdateMessage] = (
-      ("continent_guid" | PlanetSideGUID.codec) ::
-      ("building_guid" | PlanetSideGUID.codec) ::
+      ("continent_id" | uint16L) ::
+      ("building_id" | uint16L) ::
       ("ntu_level" | uint4L) ::
       ("is_hacked" | bool ) ::
       ("empire_hack" | PlanetSideEmpire.codec) ::
@@ -200,10 +186,10 @@ object BuildingInfoUpdateMessage extends Marshallable[BuildingInfoUpdateMessage]
         Attempt.successful(BuildingInfoUpdateMessage(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u))
     },
     {
-      case BuildingInfoUpdateMessage(_, _, _, _, _, _, _, 0, Some(x), _, _, _, _, _, _, _, _, _, _, _, _) =>
+      case BuildingInfoUpdateMessage(_, _, _, _, _, _, _, 0, Some(_), _, _, _, _, _, _, _, _, _, _, _, _) =>
         Attempt.failure(Err("invalid properties when value == 0"))
 
-      case BuildingInfoUpdateMessage(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, 8, Some(x), _, _) =>
+      case BuildingInfoUpdateMessage(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, 8, Some(_), _, _) =>
         Attempt.failure(Err("invalid properties when value == 8"))
 
       case BuildingInfoUpdateMessage(a, b, c, d, e, f, g, h, i, j, k, l, m, n, lst, p, q, r, s, t, u) =>

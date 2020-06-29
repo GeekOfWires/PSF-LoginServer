@@ -1,7 +1,6 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 import akka.actor.{Actor, ActorRef}
 import akka.io._
-import akka.util.ByteString
 
 import scala.util.Random
 import scala.collection.mutable
@@ -16,13 +15,16 @@ import scala.concurrent.duration._
   *                             forward or backwards in time)
   */
 case class NetworkSimulatorParameters(packetLoss : Double,
-                                      packetDelay : Int,
+                                      packetDelay : Long,
                                       packetReorderingChance : Double,
-                                      packetReorderingTime : Int) {
+                                      packetReorderingTime : Long) {
   assert(packetLoss >= 0.0 && packetLoss <= 1.0)
   assert(packetDelay >= 0)
   assert(packetReorderingChance >= 0.0 && packetReorderingChance <= 1.0)
   assert(packetReorderingTime >= 0)
+
+  override def toString = "NetSimParams: loss %.2f%% / delay %dms / reorder %.2f%% / reorder +/- %dms".format(
+    packetLoss*100, packetDelay, packetReorderingChance*100, packetReorderingTime)
 }
 
 
@@ -30,10 +32,6 @@ class UdpNetworkSimulator(server : ActorRef, params : NetworkSimulatorParameters
   private val log = org.log4s.getLogger
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  //******* Internal messages
-  private final case class ProcessInputQueue()
-  private final case class ProcessOutputQueue()
 
   //******* Variables
   val packetDelayDuration = (params.packetDelay/2).milliseconds
@@ -50,7 +48,7 @@ class UdpNetworkSimulator(server : ActorRef, params : NetworkSimulatorParameters
   var interface = ActorRef.noSender
 
   def receive = {
-    case ProcessInputQueue() =>
+    case UdpNetworkSimulator.ProcessInputQueue() =>
       val time = System.nanoTime()
       var exit = false
 
@@ -65,7 +63,7 @@ class UdpNetworkSimulator(server : ActorRef, params : NetworkSimulatorParameters
           exit = true
         }
       }
-    case ProcessOutputQueue() =>
+    case UdpNetworkSimulator.ProcessOutputQueue() =>
       val time = System.nanoTime()
       var exit = false
 
@@ -129,6 +127,12 @@ class UdpNetworkSimulator(server : ActorRef, params : NetworkSimulatorParameters
   def schedule(duration : FiniteDuration, outbound : Boolean) = context.system.scheduler.scheduleOnce(
     packetDelayDuration,
     self,
-    if(outbound) ProcessOutputQueue() else ProcessInputQueue()
+    if(outbound) UdpNetworkSimulator.ProcessOutputQueue() else UdpNetworkSimulator.ProcessInputQueue()
   )
+}
+
+object UdpNetworkSimulator {
+  //******* Internal messages
+  private final case class ProcessInputQueue()
+  private final case class ProcessOutputQueue()
 }

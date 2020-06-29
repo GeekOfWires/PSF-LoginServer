@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.types
 
 import net.psforever.packet.PacketHelpers
@@ -12,7 +12,7 @@ object TransactionType extends Enumeration {
       Sell, // or forget on certif term
       Unk4,
       Unk5,
-      Infantry_Loadout,
+      Loadout,
       Unk7
       = Value
 

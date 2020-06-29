@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet
 
 import java.nio.charset.Charset
@@ -88,7 +88,7 @@ object PacketHelpers {
   def createEnumerationCodec[E <: Enumeration](enum : E, storageCodec : Codec[Int]) : Codec[E#Value] = {
     type Struct = Int :: HNil
     val struct : Codec[Struct] = storageCodec.hlist
-    val primitiveLimit = Math.pow(2, storageCodec.sizeBound.exact.get)
+    val primitiveLimit = Math.pow(2, storageCodec.sizeBound.exact.get.toDouble)
 
     // Assure that the enum will always be able to fit in a N-bit int
     assert(enum.maxId <= primitiveLimit,
@@ -231,6 +231,21 @@ object PacketHelpers {
     * @return a codec that works on a List of A but excludes the size from the encoding
     */
   def listOfNSized[A](size : Long, codec : Codec[A]) : Codec[List[A]] = PacketHelpers.listOfNAligned(provide(if(size < 0) 0 else size), 0, codec)
+
+  /**
+    * A `peek` that decodes like the normal but encodes nothing.
+    * Decoding `Codec[A]` from the input vector emits a value but reverts to the prior read position.
+    * Encoding `Codec[A]` to the input vector appends no new data to the input vector.
+    * In effect, `peek` is a harmless meta-`Codec` that processes a value and introduces no changes to the input/output vector.
+    * @see `scodec.codecs.peek` or `codecs/package.scala:peek`
+    * @param target codec that decodes the value
+    * @return `Codec` that behaves the same as `target` but resets the contents of the vector as if `Codec` were never applied
+    */
+  def peek[A](target: Codec[A]): Codec[A] = new Codec[A] {
+    def sizeBound = target.sizeBound
+    def encode(a: A) = Attempt.Successful(BitVector.empty)
+    def decode(b: BitVector) = target.decode(b).map { _.mapRemainder(_ => b) }
+  }
 }
 
 /**

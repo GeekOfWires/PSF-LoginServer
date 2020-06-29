@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 
 import java.net.InetSocketAddress
 
@@ -35,7 +35,10 @@ class Session(val sessionId : Long,
     a
   }
 
-  pipeline.head ! HelloFriend(sessionId, pipeline.tail.head)
+  val pipelineIter = pipeline.iterator
+  if(pipelineIter.hasNext) {
+    pipelineIter.next ! HelloFriend(sessionId, pipelineIter)
+  }
 
   // statistics
   var bytesSent : Long = 0

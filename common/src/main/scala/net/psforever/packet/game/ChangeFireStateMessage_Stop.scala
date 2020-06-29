@@ -1,7 +1,8 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
-import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
+import net.psforever.packet.{GamePacketOpcode, Marshallable, PlanetSideGamePacket}
+import net.psforever.types.PlanetSideGUID
 import scodec.Codec
 import scodec.codecs._
 
@@ -13,7 +14,5 @@ final case class ChangeFireStateMessage_Stop(item_guid : PlanetSideGUID)
 }
 
 object ChangeFireStateMessage_Stop extends Marshallable[ChangeFireStateMessage_Stop] {
-  implicit val codec : Codec[ChangeFireStateMessage_Stop] = (
-      ("item_guid" | PlanetSideGUID.codec)
-    ).as[ChangeFireStateMessage_Stop]
+  implicit val codec : Codec[ChangeFireStateMessage_Stop] = ("item_guid" | PlanetSideGUID.codec).as[ChangeFireStateMessage_Stop]
 }

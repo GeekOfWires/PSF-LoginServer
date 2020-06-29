@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game.objectcreate
 
 import scodec.{Attempt, Codec, Err}
@@ -7,15 +7,10 @@ import scodec.codecs._
 import scala.annotation.switch
 
 /**
-  * A reference between all object class codes and the name of the object they represent.<br>
-  * <br>
-  * Object classes compose a number between 0 and (probably) 2047, always translating into an 11-bit value.
-  * They are recorded as little-endian hexadecimal values here.
-  * In `scodec` terms, that's a `uintL(11)` or `uintL(0xB)`.
+  * A reference between all object class codes and the name of the object they represent.
+  * Object class types are defined by an 11-bit (`0xB`) value.
   */
 object ObjectClass {
-  //character
-  final val avatar = 0x79 // 121
   //ammunition
   final val bullet_105mm = 0
   final val bullet_12mm = 3
@@ -111,9 +106,7 @@ object ObjectClass {
   final val cannon_dropship_l_20mm = 15
   final val cannon_75mm = 23
   final val lightning_75mm = 24
-  final val ace = 32
   final val ace_deployable = 33
-  final val advanced_ace = 39
   final val advanced_missile_launcher_t = 40
   final val anniversary_gun = 55
   final val anniversary_guna = 56
@@ -194,6 +187,8 @@ object ObjectClass {
   final val katana = 421
   final val lancer = 425
   final val lasher = 429
+  final val lasher_projectile = 430
+  final val lasher_projectile_ap = 431
   final val liberator_25mm_cannon = 433
   final val liberator_bomb_bay = 435
   final val liberator_weapon_system = 440
@@ -204,6 +199,9 @@ object ObjectClass {
   final val mediumtransport_weapon_systemA = 534
   final val mediumtransport_weapon_systemB = 535
   final val mini_chaingun = 556
+  final val nchev_falcon = 587
+  final val nchev_scattercannon = 588
+  final val nchev_sparrow = 589
   final val oicw = 599
   final val particle_beam_magrider = 628
   final val pellet_gun = 629
@@ -234,7 +232,6 @@ object ObjectClass {
   final val repeater = 730
   final val rocklet = 737
   final val rotarychaingun_mosquito = 740
-  final val router_telepad = 743
   final val scythe = 747
   final val six_shooter = 761
   final val skyguard_weapon_system = 788
@@ -246,8 +243,14 @@ object ObjectClass {
   final val thumper = 864
   final val thunderer_weapon_systema = 866
   final val thunderer_weapon_systemb = 867
+  final val trhev_burster = 888
+  final val trhev_dualcycler = 889
+  final val trhev_pounder = 890
   final val vanguard_weapon_system = 927
   final val vanu_sentry_turret_weapon = 945
+  final val vshev_comet = 968
+  final val vshev_quasar = 969
+  final val vshev_starfire = 970
   final val vulture_bomb_bay = 987
   final val vulture_nose_weapon_system = 990
   final val vulture_tail_cannon = 992
@@ -259,11 +262,12 @@ object ObjectClass {
   final val jammer_grenade = 416
   final val mine_sweeper = 552
   final val plasma_grenade = 680
-  //tools - medkits
+  //medkits
   final val medkit = 536
   final val super_armorkit = 842
   final val super_medkit = 843
   final val super_staminakit = 844
+  //tools
   final val remote_electronics_kit = 728
   final val trek = 876
   final val applicator = 110
@@ -271,297 +275,1112 @@ object ObjectClass {
   final val bank = 132
   final val nano_dispenser = 577
   final val command_detonater = 213
-  //unknown
-  final val locker_container = 456 //strange item found in inventory slot #5, between holsters and grid
+  final val flail_targeting_laser = 297
+  //deployables
+  final val ace = 32
+  final val advanced_ace = 39
+  final val boomer = 148
+  final val boomer_trigger = 149
+  final val he_mine = 388
+  final val jammer_mine = 420
+  final val motionalarmsensor = 575
+  final val router_telepad = 743
+  final val router_telepad_deployable = 744
+  final val sensor_shield = 752
+  final val spitfire_aa = 819
+  final val spitfire_cloaked = 825
+  final val spitfire_turret = 826
+  final val tank_traps = 849
+  final val deployable_shield_generator = 240
+  final val portable_manned_turret = 685
+  final val portable_manned_turret_nc = 686
+  final val portable_manned_turret_tr = 687
+  final val portable_manned_turret_vs = 688
+  //projectiles
+  final val hunter_seeker_missile_projectile = 405 //phoenix projectile
+  final val meteor_common = 543
+  final val meteor_projectile_b_large = 544
+  final val meteor_projectile_b_medium = 545
+  final val meteor_projectile_b_small = 546
+  final val meteor_projectile_large = 547
+  final val meteor_projectile_medium = 548
+  final val meteor_projectile_small = 549
+  final val phoenix_missile_guided_projectile = 675 //decimator projectile
+  final val oicw_little_buddy = 601 //scorpion projectile's projectiles
+  final val oicw_projectile = 602 //scorpion projectile
+  final val radiator_cload = 717
+  final val sparrow_projectile = 792 //nc aa max projectile
+  final val starfire_projectile = 831 //vs aa max projectile
+  final val striker_missile_targeting_projectile = 841 //striker projectile
+  final val wasp_rocket_projectile = 1001 //wasp projectile
+  //vehicles
+  final val apc_destroyed = 65
+  final val apc_tr = 67 //juggernaut
+  final val apc_nc = 66 //vindicator
+  final val apc_vs = 68 //leviathan
+  final val ams = 46
+  final val ams_destroyed = 47
+  final val ant = 60
+  final val ant_destroyed = 61
+  final val aphelion_flight = 83
+  final val aphelion_gunner = 84
+  final val aurora = 118
+  final val battlewagon = 135 //raider
+  final val colossus_flight = 199
+  final val colossus_gunner = 200
+  final val droppod = 258
+  final val dropship = 259
+  final val dropship_destroyed = 260
+  final val flail = 294
+  final val flail_destroyed = 295
+  final val fury = 335
+  final val galaxy_gunship = 338
+  final val liberator = 432
+  final val liberator_destroyed = 439
+  final val lightgunship = 441
+  final val lightgunship_destroyed = 442
+  final val lightning = 446
+  final val lightning_destroyed = 447
+  final val lodestar = 459
+  final val lodestar_destroyed = 460
+  final val magrider = 470
+  final val magrider_destroyed = 471
+  final val mosquito = 572
+  final val mosquito_destroyed = 573
+  final val mediumtransport = 532
+  final val mediumtransport_destroyed = 533
+  final val orbital_shuttle = 608
+  final val peregrine_flight = 642
+  final val peregrine_gunner = 643
+  final val phantasm = 671
+  final val prowler = 697
+  final val prowler_destroyed = 698
+  final val quadassault = 707
+  final val quadassault_destroyed = 708
+  final val quadstealth = 710
+  final val quadstealth_destroyed = 711
+  final val router = 741
+  final val router_destroyed = 742
+  final val skyguard = 784
+  final val skyguard_destroyed = 785
+  final val switchblade = 847
+  final val switchblade_destroyed = 848
+  final val threemanheavybuggy = 862 //marauder
+  final val threemanheavybuggy_destroyed = 863
+  final val thunderer = 865
+  final val two_man_assault_buggy = 896 //harasser
+  final val two_man_assault_buggy_destroyed = 897
+  final val twomanheavybuggy = 898 //enforcer
+  final val twomanheavybuggy_destroyed = 899
+  final val twomanhoverbuggy = 900 //thresher
+  final val twomanhoverbuggy_destroyed = 901
+  final val vanguard = 923
+  final val vanguard_destroyed = 924
+  final val vulture = 986
+  final val wasp = 997
+  //other
+  final val ams_order_terminal = 48
+  final val ams_respawn_tube = 49
+  final val avatar = 121
+  final val bfr_rearm_terminal = 142
+  final val capture_flag = 157
+  final val implant_terminal_interface = 409
+  final val locker_container = 456
+  final val lodestar_repair_terminal = 461
+  final val manned_turret = 480
+  final val matrix_terminala = 517
+  final val matrix_terminalb = 518
+  final val matrix_terminalc = 519
+  final val multivehicle_rearm_terminal = 576
+  final val order_terminal = 612
+  final val order_terminala = 613
+  final val order_terminalb = 614
+  final val portable_ammo_terminal = 684
+  final val portable_order_terminal = 690
+  final val targeting_laser_dispenser = 851
+  final val teleportpad_terminal = 853
 
+  // For property overrides
+  final val delivererv = 239
+  final val apc = 62
+  final val colossus = 179
+  final val peregrine = 632
+  final val aphelion = 79
+  final val vshev = 964
+  final val trhev = 884
+  final val nchev = 583
+  final val med_armor = 528
+  final val heavy_armor = 390
+  final val bfr_terminal = 143
+  final val vshev_antiaircraft = 965
+  final val vshev_antipersonnel = 966
+  final val vshev_antivehicular = 967
+  final val trhev_antiaircraft = 885
+  final val trhev_antipersonnel = 886
+  final val trhev_antivehicular = 887
+  final val nchev_antiaircraft = 584
+  final val nchev_antipersonnel = 585
+  final val nchev_antivehicular = 586
+  final val standard_issue_armor = 829
+  final val lite_armor = 449
+  final val air_vehicle_terminal = 43
+  final val generic_bfr = 353
+  final val stealth_armor = 837
+  final val vehicle_terminal_combined = 952
 
+  final val objectClassMap = scala.collection.mutable.Map[String, Int]()
 
-  //TODO refactor this function into another object later
+  def ByName(name : String) : Int = {
+    // This whole thing is a dirty "temporary" hack so I don't have to make a huge map out of the above object vars by hand
+    // Forgive me.
+    if(objectClassMap.size == 0) {
+      val objectClassMethods = ObjectClass.getClass.getDeclaredMethods
+      objectClassMethods.foreach(x =>  {
+        if(x.getReturnType.getName == "int" && x.getParameterTypes.isEmpty) { // ints only & Ignore functions with parameters
+          val objectName = x.getName
+          val value = ObjectClass.getClass.getMethod(objectName).invoke(ObjectClass)
+          objectClassMap.put(objectName, value.asInstanceOf[Int])
+        }
+      })
+    }
+
+    objectClassMap(name.toLowerCase())
+  }
+
+  //TODO refactor the following functions into another object later
   /**
-    * Given an object class, retrieve the `Codec` used to parse and translate the constructor data for that type.<br>
+    * Given an object class, retrieve the `Codec` used to parse and translate the constructor data for that type.
+    * This function services `0x18` `ObjectCreateDetailedMessage` packet data.<br>
     * <br>
-    * This function serves as a giant `switch` statement that loosely connects object data to object class.
-    * All entries, save the default, merely point to the `Codec` of pattern `ConstructorData.genericPattern`.
-    * This pattern connects all `Codec`s back to the superclass `ConstructorData`.
-    * The default case is a failure case for trying to either decode or encode an unknown class of object.
+    * All `Codec`s accessible by this function assume the object is perfectly visible from the perspective of the avatar.
     * @param objClass the code for the type of object being constructed
     * @return the `Codec` that handles the format of data for that particular item class, or a failing `Codec`
+    * @see `ConstructorData`
     */
-  def selectDataCodec(objClass : Int) : Codec[ConstructorData.genericPattern] = {
+  def selectDataDetailedCodec(objClass : Int) : Codec[ConstructorData] =
     (objClass : @switch) match {
       //ammunition
-      case ObjectClass.bullet_105mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_12mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_150mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_15mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_20mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_25mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_35mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_75mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_9mm => AmmoBoxData.genericCodec
-      case ObjectClass.bullet_9mm_AP => AmmoBoxData.genericCodec
-      case ObjectClass.ancient_ammo_combo => AmmoBoxData.genericCodec
-      case ObjectClass.ancient_ammo_vehicle => AmmoBoxData.genericCodec
-      case ObjectClass.anniversary_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.aphelion_immolation_cannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.aphelion_laser_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.aphelion_plasma_rocket_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.aphelion_ppa_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.aphelion_starfire_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.armor_canister => AmmoBoxData.genericCodec
-      case ObjectClass.armor_siphon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.bolt => AmmoBoxData.genericCodec
-      case ObjectClass.burster_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.colossus_100mm_cannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.colossus_burster_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.colossus_chaingun_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.colossus_cluster_bomb_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.colossus_tank_cannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.comet_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.dualcycler_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.energy_cell => AmmoBoxData.genericCodec
-      case ObjectClass.energy_gun_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.falcon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.firebird_missile => AmmoBoxData.genericCodec
-      case ObjectClass.flamethrower_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.flux_cannon_thresher_battery => AmmoBoxData.genericCodec
-      case ObjectClass.fluxpod_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.frag_cartridge => AmmoBoxData.genericCodec
-      case ObjectClass.frag_grenade_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.gauss_cannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.grenade => AmmoBoxData.genericCodec
-      case ObjectClass.health_canister => AmmoBoxData.genericCodec
-      case ObjectClass.heavy_grenade_mortar => AmmoBoxData.genericCodec
-      case ObjectClass.heavy_rail_beam_battery => AmmoBoxData.genericCodec
-      case ObjectClass.hellfire_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.hunter_seeker_missile => AmmoBoxData.genericCodec
-      case ObjectClass.jammer_cartridge => AmmoBoxData.genericCodec
-      case ObjectClass.jammer_grenade_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.lancer_cartridge => AmmoBoxData.genericCodec
-      case ObjectClass.liberator_bomb => AmmoBoxData.genericCodec
-      case ObjectClass.maelstrom_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.melee_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.mine => AmmoBoxData.genericCodec
-      case ObjectClass.mine_sweeper_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.ntu_siphon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.oicw_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.pellet_gun_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.peregrine_dual_machine_gun_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.peregrine_mechhammer_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.peregrine_particle_cannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.peregrine_rocket_pod_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.peregrine_sparrow_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.phalanx_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.phoenix_missile => AmmoBoxData.genericCodec
-      case ObjectClass.plasma_cartridge => AmmoBoxData.genericCodec
-      case ObjectClass.plasma_grenade_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.pounder_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.pulse_battery => AmmoBoxData.genericCodec
-      case ObjectClass.quasar_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.reaver_rocket => AmmoBoxData.genericCodec
-      case ObjectClass.rocket => AmmoBoxData.genericCodec
-      case ObjectClass.scattercannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.shotgun_shell => AmmoBoxData.genericCodec
-      case ObjectClass.shotgun_shell_AP => AmmoBoxData.genericCodec
-      case ObjectClass.six_shooter_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.skyguard_flak_cannon_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.sparrow_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.spitfire_aa_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.spitfire_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.starfire_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.striker_missile_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.trek_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.upgrade_canister => AmmoBoxData.genericCodec
-      case ObjectClass.wasp_gun_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.wasp_rocket_ammo => AmmoBoxData.genericCodec
-      case ObjectClass.winchester_ammo => AmmoBoxData.genericCodec
-      //weapons (have a look on punisher)
-      case ObjectClass.beamer => WeaponData.genericCodec
-      case ObjectClass.chaingun_12mm => WeaponData.genericCodec
-      case ObjectClass.chaingun_15mm => WeaponData.genericCodec
-      case ObjectClass.cannon_20mm => WeaponData.genericCodec
-      case ObjectClass.cannon_deliverer_20mm => WeaponData.genericCodec
-      case ObjectClass.cannon_dropship_20mm => WeaponData.genericCodec
-      case ObjectClass.cannon_dropship_l_20mm => WeaponData.genericCodec
-      case ObjectClass.cannon_75mm => WeaponData.genericCodec
-      case ObjectClass.lightning_75mm => WeaponData.genericCodec
-      case ObjectClass.ace => WeaponData.genericCodec
-      case ObjectClass.ace_deployable => WeaponData.genericCodec
-      case ObjectClass.advanced_ace => WeaponData.genericCodec
-      case ObjectClass.advanced_missile_launcher_t => WeaponData.genericCodec
-      case ObjectClass.anniversary_gun => WeaponData.genericCodec
-      case ObjectClass.anniversary_guna => WeaponData.genericCodec
-      case ObjectClass.anniversary_gunb => WeaponData.genericCodec
-      case ObjectClass.apc_ballgun_l => WeaponData.genericCodec
-      case ObjectClass.apc_ballgun_r => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systema => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemb => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemc => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemc_nc => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemc_tr => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemc_vs => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemd => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemd_nc => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemd_tr => WeaponData.genericCodec
-      case ObjectClass.apc_weapon_systemd_vs => WeaponData.genericCodec
-      case ObjectClass.aphelion_immolation_cannon => WeaponData.genericCodec
-      case ObjectClass.aphelion_laser => WeaponData.genericCodec
-      case ObjectClass.aphelion_laser_left => WeaponData.genericCodec
-      case ObjectClass.aphelion_laser_right => WeaponData.genericCodec
-      case ObjectClass.aphelion_plasma_rocket_pod => WeaponData.genericCodec
-      case ObjectClass.aphelion_ppa => WeaponData.genericCodec
-      case ObjectClass.aphelion_ppa_left => WeaponData.genericCodec
-      case ObjectClass.aphelion_ppa_right => WeaponData.genericCodec
-      case ObjectClass.aphelion_starfire => WeaponData.genericCodec
-      case ObjectClass.aphelion_starfire_left => WeaponData.genericCodec
-      case ObjectClass.aphelion_starfire_right => WeaponData.genericCodec
-      case ObjectClass.aurora_weapon_systema => WeaponData.genericCodec
-      case ObjectClass.aurora_weapon_systemb => WeaponData.genericCodec
-      case ObjectClass.battlewagon_weapon_systema => WeaponData.genericCodec
-      case ObjectClass.battlewagon_weapon_systemb => WeaponData.genericCodec
-      case ObjectClass.battlewagon_weapon_systemc => WeaponData.genericCodec
-      case ObjectClass.battlewagon_weapon_systemd => WeaponData.genericCodec
-      case ObjectClass.bolt_driver => WeaponData.genericCodec
-      case ObjectClass.chainblade => WeaponData.genericCodec
-      case ObjectClass.chaingun_p => WeaponData.genericCodec
-      case ObjectClass.colossus_burster => WeaponData.genericCodec
-      case ObjectClass.colossus_burster_left => WeaponData.genericCodec
-      case ObjectClass.colossus_burster_right => WeaponData.genericCodec
-      case ObjectClass.colossus_chaingun => WeaponData.genericCodec
-      case ObjectClass.colossus_chaingun_left => WeaponData.genericCodec
-      case ObjectClass.colossus_chaingun_right => WeaponData.genericCodec
-      case ObjectClass.colossus_cluster_bomb_pod => WeaponData.genericCodec
-      case ObjectClass.colossus_dual_100mm_cannons => WeaponData.genericCodec
-      case ObjectClass.colossus_tank_cannon => WeaponData.genericCodec
-      case ObjectClass.colossus_tank_cannon_left => WeaponData.genericCodec
-      case ObjectClass.colossus_tank_cannon_right => WeaponData.genericCodec
-      case ObjectClass.cycler => WeaponData.genericCodec
-      case ObjectClass.cycler_v2 => WeaponData.genericCodec
-      case ObjectClass.cycler_v3 => WeaponData.genericCodec
-      case ObjectClass.cycler_v4 => WeaponData.genericCodec
-      case ObjectClass.dropship_rear_turret => WeaponData.genericCodec
-      case ObjectClass.energy_gun => WeaponData.genericCodec
-      case ObjectClass.energy_gun_nc => WeaponData.genericCodec
-      case ObjectClass.energy_gun_tr => WeaponData.genericCodec
-      case ObjectClass.energy_gun_vs => WeaponData.genericCodec
-      case ObjectClass.flail_weapon => WeaponData.genericCodec
-      case ObjectClass.flamethrower => WeaponData.genericCodec
-      case ObjectClass.flechette => WeaponData.genericCodec
-      case ObjectClass.flux_cannon_thresher => WeaponData.genericCodec
-      case ObjectClass.fluxpod => WeaponData.genericCodec
-      case ObjectClass.forceblade => WeaponData.genericCodec
-      case ObjectClass.fragmentation_grenade => WeaponData.genericCodec
-      case ObjectClass.fury_weapon_systema => WeaponData.genericCodec
-      case ObjectClass.galaxy_gunship_cannon => WeaponData.genericCodec
-      case ObjectClass.galaxy_gunship_gun => WeaponData.genericCodec
-      case ObjectClass.galaxy_gunship_tailgun => WeaponData.genericCodec
-      case ObjectClass.gauss => WeaponData.genericCodec
-      case ObjectClass.gauss_cannon => WeaponData.genericCodec
-      case ObjectClass.grenade_launcher_marauder => WeaponData.genericCodec
-      case ObjectClass.heavy_rail_beam_magrider => WeaponData.genericCodec
-      case ObjectClass.heavy_sniper => WeaponData.genericCodec
-      case ObjectClass.hellfire => WeaponData.genericCodec
-      case ObjectClass.hunterseeker => WeaponData.genericCodec
-      case ObjectClass.ilc9 => WeaponData.genericCodec
-      case ObjectClass.isp => WeaponData.genericCodec
-      case ObjectClass.katana => WeaponData.genericCodec
-      case ObjectClass.lancer => WeaponData.genericCodec
-      case ObjectClass.lasher => WeaponData.genericCodec
-      case ObjectClass.liberator_25mm_cannon => WeaponData.genericCodec
-      case ObjectClass.liberator_bomb_bay => WeaponData.genericCodec
-      case ObjectClass.liberator_weapon_system => WeaponData.genericCodec
-      case ObjectClass.lightgunship_weapon_system => WeaponData.genericCodec
-      case ObjectClass.lightning_weapon_system => WeaponData.genericCodec
-      case ObjectClass.maelstrom => WeaponData.genericCodec
-      case ObjectClass.magcutter => WeaponData.genericCodec
-      case ObjectClass.mediumtransport_weapon_systemA => WeaponData.genericCodec
-      case ObjectClass.mediumtransport_weapon_systemB => WeaponData.genericCodec
-      case ObjectClass.mini_chaingun => WeaponData.genericCodec
-      case ObjectClass.oicw => WeaponData.genericCodec
-      case ObjectClass.particle_beam_magrider => WeaponData.genericCodec
-      case ObjectClass.pellet_gun => WeaponData.genericCodec
-      case ObjectClass.peregrine_dual_machine_gun => WeaponData.genericCodec
-      case ObjectClass.peregrine_dual_machine_gun_left => WeaponData.genericCodec
-      case ObjectClass.peregrine_dual_machine_gun_right => WeaponData.genericCodec
-      case ObjectClass.peregrine_dual_rocket_pods => WeaponData.genericCodec
-      case ObjectClass.peregrine_mechhammer => WeaponData.genericCodec
-      case ObjectClass.peregrine_mechhammer_left => WeaponData.genericCodec
-      case ObjectClass.peregrine_mechhammer_right => WeaponData.genericCodec
-      case ObjectClass.peregrine_particle_cannon => WeaponData.genericCodec
-      case ObjectClass.peregrine_sparrow => WeaponData.genericCodec
-      case ObjectClass.peregrine_sparrow_left => WeaponData.genericCodec
-      case ObjectClass.peregrine_sparrow_right => WeaponData.genericCodec
-      case ObjectClass.phalanx_avcombo => WeaponData.genericCodec
-      case ObjectClass.phalanx_flakcombo => WeaponData.genericCodec
-      case ObjectClass.phalanx_sgl_hevgatcan => WeaponData.genericCodec
-      case ObjectClass.phantasm_12mm_machinegun => WeaponData.genericCodec
-      case ObjectClass.phoenix => WeaponData.genericCodec
-      case ObjectClass.prowler_weapon_systemA => WeaponData.genericCodec
-      case ObjectClass.prowler_weapon_systemB => WeaponData.genericCodec
-      case ObjectClass.pulsar => WeaponData.genericCodec
-      case ObjectClass.pulsed_particle_accelerator => WeaponData.genericCodec
-      case ObjectClass.punisher => ConcurrentFeedWeaponData.genericCodec
-      case ObjectClass.quadassault_weapon_system => WeaponData.genericCodec
-      case ObjectClass.r_shotgun => WeaponData.genericCodec
-      case ObjectClass.radiator => WeaponData.genericCodec
-      case ObjectClass.repeater => WeaponData.genericCodec
-      case ObjectClass.rocklet => WeaponData.genericCodec
-      case ObjectClass.rotarychaingun_mosquito => WeaponData.genericCodec
-      case ObjectClass.router_telepad => WeaponData.genericCodec
-      case ObjectClass.scythe => WeaponData.genericCodec
-      case ObjectClass.six_shooter => WeaponData.genericCodec
-      case ObjectClass.skyguard_weapon_system => WeaponData.genericCodec
-      case ObjectClass.spiker => WeaponData.genericCodec
-      case ObjectClass.spitfire_aa_weapon => WeaponData.genericCodec
-      case ObjectClass.spitfire_weapon => WeaponData.genericCodec
-      case ObjectClass.striker => WeaponData.genericCodec
-      case ObjectClass.suppressor => WeaponData.genericCodec
-      case ObjectClass.thumper => WeaponData.genericCodec
-      case ObjectClass.thunderer_weapon_systema => WeaponData.genericCodec
-      case ObjectClass.thunderer_weapon_systemb => WeaponData.genericCodec
-      case ObjectClass.vanguard_weapon_system => WeaponData.genericCodec
-      case ObjectClass.vanu_sentry_turret_weapon => WeaponData.genericCodec
-      case ObjectClass.vulture_bomb_bay => WeaponData.genericCodec
-      case ObjectClass.vulture_nose_weapon_system => WeaponData.genericCodec
-      case ObjectClass.vulture_tail_cannon => WeaponData.genericCodec
-      case ObjectClass.wasp_weapon_system => WeaponData.genericCodec
-      case ObjectClass.winchester => WeaponData.genericCodec
-      case ObjectClass.dynomite => WeaponData.genericCodec
-      case ObjectClass.frag_grenade => WeaponData.genericCodec
-      case ObjectClass.generic_grenade => WeaponData.genericCodec
-      case ObjectClass.jammer_grenade => WeaponData.genericCodec
-      case ObjectClass.mine_sweeper => WeaponData.genericCodec
-      case ObjectClass.plasma_grenade => WeaponData.genericCodec
-      //tools - medkits
-      case ObjectClass.avatar => CharacterData.genericCodec
-      case ObjectClass.locker_container => AmmoBoxData.genericCodec
+      case ObjectClass.bullet_105mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_12mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_150mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_15mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_20mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_25mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_35mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_75mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_9mm => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bullet_9mm_AP => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.ancient_ammo_combo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.ancient_ammo_vehicle => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.anniversary_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.aphelion_immolation_cannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.aphelion_laser_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.aphelion_plasma_rocket_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.aphelion_ppa_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.aphelion_starfire_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.armor_canister => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.armor_siphon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.bolt => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.burster_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.colossus_100mm_cannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.colossus_burster_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.colossus_chaingun_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.colossus_cluster_bomb_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.colossus_tank_cannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.comet_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.dualcycler_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.energy_cell => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.energy_gun_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.falcon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.firebird_missile => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.flamethrower_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.flux_cannon_thresher_battery => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.fluxpod_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.frag_cartridge => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.frag_grenade_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.gauss_cannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.grenade => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.health_canister => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.heavy_grenade_mortar => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.heavy_rail_beam_battery => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.hellfire_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.hunter_seeker_missile => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.jammer_cartridge => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.jammer_grenade_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.lancer_cartridge => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.liberator_bomb => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.maelstrom_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.melee_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.mine => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.mine_sweeper_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.ntu_siphon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.oicw_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.pellet_gun_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.peregrine_dual_machine_gun_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.peregrine_mechhammer_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.peregrine_particle_cannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.peregrine_rocket_pod_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.peregrine_sparrow_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.phalanx_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.phoenix_missile => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.plasma_cartridge => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.plasma_grenade_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.pounder_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.pulse_battery => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.quasar_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.reaver_rocket => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.rocket => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.scattercannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.shotgun_shell => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.shotgun_shell_AP => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.six_shooter_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.skyguard_flak_cannon_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.sparrow_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.spitfire_aa_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.spitfire_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.starfire_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.striker_missile_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.trek_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.upgrade_canister => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.wasp_gun_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.wasp_rocket_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      case ObjectClass.winchester_ammo => ConstructorData(DetailedAmmoBoxData.codec, "ammo box")
+      //weapons
+      case ObjectClass.beamer => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.cannon_dropship_20mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.anniversary_gun => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.anniversary_guna => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.anniversary_gunb => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_ballgun_l => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_ballgun_r => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systema => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemb => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemc => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemc_nc => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemc_tr => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemc_vs => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemd => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemd_nc => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemd_tr => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.apc_weapon_systemd_vs => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_immolation_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_laser => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_laser_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_laser_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_plasma_rocket_pod => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_ppa => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_ppa_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_ppa_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_starfire => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_starfire_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_starfire_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aurora_weapon_systema => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.aurora_weapon_systemb => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.battlewagon_weapon_systema => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.battlewagon_weapon_systemb => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.battlewagon_weapon_systemc => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.battlewagon_weapon_systemd => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.bolt_driver => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.chainblade => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_burster => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_burster_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_burster_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_chaingun => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_chaingun_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_chaingun_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_cluster_bomb_pod => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_dual_100mm_cannons => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_tank_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_tank_cannon_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.colossus_tank_cannon_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cycler => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.dropship_rear_turret => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun_nc => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun_tr => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun_vs => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.flail_weapon => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.flamethrower => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.flechette => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.flux_cannon_thresher => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.fluxpod => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.forceblade => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.fragmentation_grenade => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.fury_weapon_systema => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.galaxy_gunship_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.galaxy_gunship_gun => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.galaxy_gunship_tailgun => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.gauss => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.gauss_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.grenade_launcher_marauder => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.heavy_rail_beam_magrider => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.heavy_sniper => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.hellfire => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.hunterseeker => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.ilc9 => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.isp => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.jammer_grenade => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.katana => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.lancer => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.lasher => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.liberator_25mm_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.liberator_bomb_bay => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.liberator_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.lightgunship_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.lightning_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.maelstrom => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.magcutter => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.mediumtransport_weapon_systemA => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.mediumtransport_weapon_systemB => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.mini_chaingun => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.oicw => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.nchev_falcon => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.nchev_scattercannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.nchev_sparrow => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.particle_beam_magrider => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_machine_gun => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_machine_gun_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_machine_gun_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_rocket_pods => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_mechhammer => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_mechhammer_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_mechhammer_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_particle_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_sparrow => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_sparrow_left => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_sparrow_right => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.phalanx_avcombo => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.phalanx_flakcombo => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.phalanx_sgl_hevgatcan => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.phoenix => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.prowler_weapon_systemA => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.prowler_weapon_systemB => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.plasma_grenade => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.pulsar => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.pulsed_particle_accelerator => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.punisher => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.quadassault_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.r_shotgun => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.radiator => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.repeater => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.rocklet => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.rotarychaingun_mosquito => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.scythe => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.skyguard_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.spiker => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.spitfire_aa_weapon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.spitfire_weapon => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.striker => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.suppressor => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.thumper => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.thunderer_weapon_systema => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.thunderer_weapon_systemb => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.trhev_burster => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.trhev_dualcycler => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.trhev_pounder => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.vanguard_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.vanu_sentry_turret_weapon => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.vshev_comet => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.vshev_starfire => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.vshev_quasar => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.vulture_bomb_bay => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.vulture_nose_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.vulture_tail_cannon => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.wasp_weapon_system => ConstructorData(DetailedWeaponData.codec, "weapon")
+      //other weapons
+      case ObjectClass.ace_deployable => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.advanced_missile_launcher_t => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cannon_20mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cannon_75mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cannon_deliverer_20mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cannon_dropship_l_20mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.chaingun_12mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.chaingun_15mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.chaingun_p => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cycler_v2 => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cycler_v3 => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.cycler_v4 => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.dynomite => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.frag_grenade => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.generic_grenade => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.lightning_75mm => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.mine_sweeper => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.pellet_gun => ConstructorData(DetailedWeaponData.codec, "weapon")
+//      case ObjectClass.phantasm_12mm_machinegun => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.six_shooter => ConstructorData(DetailedWeaponData.codec, "weapon")
+      case ObjectClass.winchester => ConstructorData(DetailedWeaponData.codec, "weapon")
+      //medkits
+      case ObjectClass.medkit => ConstructorData(DetailedAmmoBoxData.codec, "medkit")
+      case ObjectClass.super_armorkit => ConstructorData(DetailedAmmoBoxData.codec, "repair kit")
+      case ObjectClass.super_medkit => ConstructorData(DetailedAmmoBoxData.codec, "super medkit")
+      case ObjectClass.super_staminakit => ConstructorData(DetailedAmmoBoxData.codec, "stamina kit")
+      //tools
+      case ObjectClass.applicator => ConstructorData(DetailedWeaponData.codec, "tool")
+      case ObjectClass.bank => ConstructorData(DetailedWeaponData.codec, "tool")
+      case ObjectClass.command_detonater => ConstructorData(DetailedCommandDetonaterData.codec, "tool")
+      case ObjectClass.flail_targeting_laser => ConstructorData(DetailedCommandDetonaterData.codec, "tool")
+      case ObjectClass.medicalapplicator => ConstructorData(DetailedWeaponData.codec, "tool")
+      case ObjectClass.nano_dispenser => ConstructorData(DetailedWeaponData.codec, "tool")
+      case ObjectClass.remote_electronics_kit => ConstructorData(DetailedREKData.codec, "tool")
+      case ObjectClass.trek => ConstructorData(DetailedWeaponData.codec, "tool")
+      //ace deployable
+      case ObjectClass.ace => ConstructorData(DetailedConstructionToolData.codec, "ace")
+      case ObjectClass.advanced_ace => ConstructorData(DetailedConstructionToolData.codec, "advanced ace")
+      case ObjectClass.router_telepad => ConstructorData(DetailedConstructionToolData.codec, "router telepad")
+      case ObjectClass.boomer_trigger => ConstructorData(DetailedConstructionToolData.codec, "boomer trigger")
+      //other
+      case ObjectClass.avatar => ConstructorData(DetailedPlayerData.codec(false), "avatar")
+      case ObjectClass.locker_container => ConstructorData(DetailedLockerContainerData.codec, "locker container")
 
-      case ObjectClass.remote_electronics_kit => REKData.genericCodec
-      case ObjectClass.trek => WeaponData.genericCodec
-      case ObjectClass.medkit => AmmoBoxData.genericCodec
-      case ObjectClass.super_armorkit => AmmoBoxData.genericCodec
-      case ObjectClass.super_medkit => AmmoBoxData.genericCodec
-      case ObjectClass.super_staminakit => AmmoBoxData.genericCodec
-      case ObjectClass.applicator => WeaponData.genericCodec
-      case ObjectClass.medicalapplicator => WeaponData.genericCodec
-      case ObjectClass.bank => WeaponData.genericCodec
-      case ObjectClass.nano_dispenser => WeaponData.genericCodec
-      case ObjectClass.command_detonater => WeaponData.genericCodec
-
-
-
-
-              //failure case
-      case _ => conditional(false, bool).exmap[ConstructorData.genericPattern] (
-        {
-          case None | _ =>
-            Attempt.failure(Err("decoding unknown object class"))
-        },
-        {
-          case None | _ =>
-            Attempt.failure(Err("encoding unknown object class"))
-        }
-      )
+      //failure case
+      case _ => defaultFailureCodec(objClass)
     }
+
+  def selectDataDroppedDetailedCodec(objClass : Int) : Codec[ConstructorData] =
+    (objClass : @switch) match {
+      //special cases
+      case ObjectClass.avatar => ConstructorData(DetailedPlayerData.codec(true), "avatar")
+      //defer to other codec selection
+      case _ => selectDataDetailedCodec(objClass)
+    }
+
+  /**
+    * Given an object class, retrieve the `Codec` used to parse and translate the constructor data for that type.
+    * This function services `0x17` `ObjectCreateMessage` packet data.<br>
+    * <br>
+    * All `Codec`s accessible by this function assume the object has parent data.
+    * @param objClass the code for the type of object being constructed
+    * @return the `Codec` that handles the format of data for that particular item class, or a failing `Codec`
+    * @see `ConstructorData`
+    */
+  def selectDataCodec(objClass : Int) : Codec[ConstructorData] =
+    (objClass : @switch) match {
+      //ammunition
+      case ObjectClass.bullet_105mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_12mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_150mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_15mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_20mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_25mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_35mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_75mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_9mm => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_9mm_AP => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.ancient_ammo_combo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.ancient_ammo_vehicle => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.anniversary_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_immolation_cannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_laser_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_plasma_rocket_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_ppa_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_starfire_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.armor_canister => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.armor_siphon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bolt => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.burster_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_100mm_cannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_burster_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_chaingun_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_cluster_bomb_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_tank_cannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.comet_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.dualcycler_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.energy_cell => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.energy_gun_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.falcon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.firebird_missile => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.flamethrower_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.flux_cannon_thresher_battery => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.fluxpod_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.frag_cartridge => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.frag_grenade_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.gauss_cannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.grenade => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.health_canister => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.heavy_grenade_mortar => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.heavy_rail_beam_battery => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.hellfire_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.hunter_seeker_missile => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.jammer_cartridge => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.jammer_grenade_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.lancer_cartridge => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.liberator_bomb => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.maelstrom_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.melee_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.mine => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.mine_sweeper_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.ntu_siphon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.oicw_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.pellet_gun_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_dual_machine_gun_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_mechhammer_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_particle_cannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_rocket_pod_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_sparrow_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.phalanx_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.phoenix_missile => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.plasma_cartridge => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.plasma_grenade_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.pounder_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.pulse_battery => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.quasar_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.reaver_rocket => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.rocket => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.scattercannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.shotgun_shell => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.shotgun_shell_AP => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.six_shooter_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.skyguard_flak_cannon_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.sparrow_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.spitfire_aa_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.spitfire_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.starfire_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.striker_missile_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.trek_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.upgrade_canister => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.wasp_gun_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.wasp_rocket_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.winchester_ammo => ConstructorData(CommonFieldData.codec2, "ammo box")
+      //weapons
+      case ObjectClass.beamer => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.anniversary_gun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.anniversary_guna => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.anniversary_gunb => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_ballgun_l => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_ballgun_r => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systema => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemb => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemc => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemc_nc => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemc_tr => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemc_vs => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemd => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemd_nc => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemd_tr => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.apc_weapon_systemd_vs => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_immolation_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_laser => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_laser_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_laser_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_plasma_rocket_pod => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_ppa => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_ppa_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_ppa_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_starfire => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_starfire_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aphelion_starfire_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aurora_weapon_systema => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.aurora_weapon_systemb => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.battlewagon_weapon_systema => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.battlewagon_weapon_systemb => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.battlewagon_weapon_systemc => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.battlewagon_weapon_systemd => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.bolt_driver => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.chainblade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.chaingun_p => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_burster => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_burster_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_burster_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_chaingun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_chaingun_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_chaingun_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_cluster_bomb_pod => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_dual_100mm_cannons => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_tank_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_tank_cannon_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.colossus_tank_cannon_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.dropship_rear_turret => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.energy_gun_nc => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.energy_gun_tr => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.energy_gun_vs => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.flail_weapon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.flamethrower => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.flechette => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.flux_cannon_thresher => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.fluxpod => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.forceblade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.fragmentation_grenade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.fury_weapon_systema => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.galaxy_gunship_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.galaxy_gunship_gun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.galaxy_gunship_tailgun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.gauss => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.gauss_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.grenade_launcher_marauder => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.heavy_rail_beam_magrider => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.heavy_sniper => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.hellfire => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.hunterseeker => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.ilc9 => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.isp => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.jammer_grenade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.katana => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.lancer => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.lasher => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.liberator_25mm_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.liberator_bomb_bay => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.liberator_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.lightgunship_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.lightning_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.maelstrom => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.magcutter => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.mediumtransport_weapon_systemA => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.mediumtransport_weapon_systemB => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.mini_chaingun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.nchev_falcon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.nchev_scattercannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.nchev_sparrow => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.oicw => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.particle_beam_magrider => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.pellet_gun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_dual_machine_gun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_dual_machine_gun_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_dual_machine_gun_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_dual_rocket_pods => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_mechhammer => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_mechhammer_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_mechhammer_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_particle_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_sparrow => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_sparrow_left => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.peregrine_sparrow_right => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.phalanx_avcombo => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.phalanx_flakcombo => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.phalanx_sgl_hevgatcan => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.phoenix => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.plasma_grenade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.prowler_weapon_systemA => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.prowler_weapon_systemB => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.pulsar => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.pulsed_particle_accelerator => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.punisher => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.quadassault_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.r_shotgun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.radiator => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.repeater => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.rocklet => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.rotarychaingun_mosquito => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.scythe => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.skyguard_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.spiker => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.spitfire_aa_weapon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.spitfire_weapon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.striker => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.suppressor => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.thumper => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.thunderer_weapon_systema => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.thunderer_weapon_systemb => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.trhev_burster => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.trhev_dualcycler => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.trhev_pounder => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vanguard_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vanu_sentry_turret_weapon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vshev_comet => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vshev_quasar => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vshev_starfire => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vulture_bomb_bay => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vulture_nose_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.vulture_tail_cannon => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.wasp_weapon_system => ConstructorData(WeaponData.codec, "weapon")
+      //other weapons
+      case ObjectClass.ace_deployable => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.advanced_missile_launcher_t => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cannon_20mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cannon_75mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cannon_deliverer_20mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cannon_dropship_l_20mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cannon_dropship_20mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.chaingun_12mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.chaingun_15mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler_v2 => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler_v3 => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler_v4 => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.dynomite => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.energy_gun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.frag_grenade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.generic_grenade => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.lightning_75mm => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.mine_sweeper => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.phantasm_12mm_machinegun => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.six_shooter => ConstructorData(WeaponData.codec, "weapon")
+      case ObjectClass.winchester => ConstructorData(WeaponData.codec, "weapon")
+      //medkits
+      case ObjectClass.medkit => ConstructorData(CommonFieldData.codec2, "medkit")
+      case ObjectClass.super_armorkit => ConstructorData(CommonFieldData.codec2, "repair kit")
+      case ObjectClass.super_medkit => ConstructorData(CommonFieldData.codec2, "super medkit")
+      case ObjectClass.super_staminakit => ConstructorData(CommonFieldData.codec2, "stamina kit")
+      //tools
+      case ObjectClass.applicator => ConstructorData(WeaponData.codec, "tool")
+      case ObjectClass.bank => ConstructorData(WeaponData.codec, "tool")
+      case ObjectClass.command_detonater => ConstructorData(HandheldData.codec, "tool")
+      case ObjectClass.flail_targeting_laser => ConstructorData(HandheldData.codec, "tool")
+      case ObjectClass.medicalapplicator => ConstructorData(WeaponData.codec, "tool")
+      case ObjectClass.nano_dispenser => ConstructorData(WeaponData.codec, "tool")
+      case ObjectClass.remote_electronics_kit => ConstructorData(REKData.codec, "tool")
+      case ObjectClass.trek => ConstructorData(WeaponData.codec, "tool")
+      //deployables
+      case ObjectClass.ace => ConstructorData(HandheldData.codec, "ace")
+      case ObjectClass.advanced_ace => ConstructorData(HandheldData.codec, "advanced ace")
+      case ObjectClass.router_telepad => ConstructorData(HandheldData.codec, "router telepad")
+      case ObjectClass.router_telepad_deployable => ConstructorData(TelepadDeployableData.codec, "router telepad")
+      case ObjectClass.boomer_trigger => ConstructorData(HandheldData.codec, "boomer trigger")
+      //vehicles?
+      case ObjectClass.orbital_shuttle => ConstructorData(OrbitalShuttleData.codec, "HART")
+      //other
+      case ObjectClass.ams_order_terminal => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.ams_respawn_tube => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.avatar => ConstructorData(PlayerData.codec(false), "avatar")
+      case ObjectClass.bfr_rearm_terminal => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.implant_terminal_interface => ConstructorData(CommonFieldData.codec2, "implant terminal")
+      case ObjectClass.lodestar_repair_terminal => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.matrix_terminala => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.matrix_terminalb => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.matrix_terminalc => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.multivehicle_rearm_terminal => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.order_terminal => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.order_terminala => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.order_terminalb => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.targeting_laser_dispenser => ConstructorData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.teleportpad_terminal => ConstructorData(CommonFieldData.codec2, "terminal")
+      //failure case
+      case _ => defaultFailureCodec(objClass)
+    }
+
+  /**
+    * Given an object class, retrieve the `Codec` used to parse and translate the constructor data for that type.
+    * This function services `0x17` `ObjectCreateMessage` packet data.<br>
+    * <br>
+    * All `Codec`s accessible by this function assume the object has no parent data and is on the ground.
+    * @param objClass the code for the type of object being constructed
+    * @return the `Codec` that handles the format of data for that particular item class, or a failing `Codec`
+    * @see `ConstructorData`
+    */
+  def selectDataDroppedCodec(objClass : Int) : Codec[ConstructorData] =
+    (objClass : @switch) match {
+      //ammunition
+      case ObjectClass.bullet_105mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_12mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_150mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_15mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_20mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_25mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_35mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_75mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_9mm => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bullet_9mm_AP => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.ancient_ammo_combo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.ancient_ammo_vehicle => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.anniversary_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_immolation_cannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_laser_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_plasma_rocket_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_ppa_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.aphelion_starfire_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.armor_canister => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.armor_siphon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.bolt => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.burster_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_100mm_cannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_burster_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_chaingun_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_cluster_bomb_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.colossus_tank_cannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.comet_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.dualcycler_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.energy_cell => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.energy_gun_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.falcon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.firebird_missile => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.flamethrower_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.flux_cannon_thresher_battery => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.fluxpod_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.frag_cartridge => DroppedItemData(CommonFieldData.codec2, "ammo box")
+//      case ObjectClass.frag_grenade_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.gauss_cannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.grenade => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.health_canister => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.heavy_grenade_mortar => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.heavy_rail_beam_battery => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.hellfire_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.hunter_seeker_missile => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.jammer_cartridge => DroppedItemData(CommonFieldData.codec2, "ammo box")
+//      case ObjectClass.jammer_grenade_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.lancer_cartridge => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.liberator_bomb => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.maelstrom_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.melee_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.mine => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.mine_sweeper_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.ntu_siphon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.oicw_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.pellet_gun_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_dual_machine_gun_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_mechhammer_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_particle_cannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_rocket_pod_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.peregrine_sparrow_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.phalanx_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.phoenix_missile => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.plasma_cartridge => DroppedItemData(CommonFieldData.codec2, "ammo box")
+//      case ObjectClass.plasma_grenade_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.pounder_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.pulse_battery => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.quasar_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.reaver_rocket => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.rocket => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.scattercannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.shotgun_shell => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.shotgun_shell_AP => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.six_shooter_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.skyguard_flak_cannon_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.sparrow_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.spitfire_aa_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.spitfire_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.starfire_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.striker_missile_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+//      case ObjectClass.trek_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.upgrade_canister => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.wasp_gun_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.wasp_rocket_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      case ObjectClass.winchester_ammo => DroppedItemData(CommonFieldData.codec2, "ammo box")
+      //weapons
+      case ObjectClass.beamer => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.anniversary_gun => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.anniversary_guna => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.anniversary_gunb => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_immolation_cannon => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_laser => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_laser_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_laser_right => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_plasma_rocket_pod => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_ppa => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_ppa_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_ppa_right => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_starfire => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_starfire_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.aphelion_starfire_right => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.bolt_driver => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.chainblade => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.chaingun_p => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_burster => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_burster_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_burster_right => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_chaingun => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_chaingun_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_chaingun_right => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_cluster_bomb_pod => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_dual_100mm_cannons => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_tank_cannon => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_tank_cannon_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.colossus_tank_cannon_right => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun_nc => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun_tr => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.energy_gun_vs => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.flamethrower => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.flechette => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.forceblade => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.fragmentation_grenade => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.gauss => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.heavy_sniper => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.hellfire => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.hunterseeker => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.ilc9 => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.isp => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.jammer_grenade => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.katana => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.lancer => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.lasher => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.maelstrom => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.magcutter => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.mini_chaingun => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.oicw => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_machine_gun => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_machine_gun_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_machine_gun_right => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_dual_rocket_pods => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_mechhammer => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_mechhammer_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_mechhammer_right => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_particle_cannon => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_sparrow => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_sparrow_left => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.peregrine_sparrow_right => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.phoenix => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.pulsar => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.plasma_grenade => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.punisher => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.r_shotgun => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.radiator => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.repeater => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.rocklet => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.spiker => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.spitfire_aa_weapon => DroppedItemData(WeaponData.codec, "weapon")
+//      case ObjectClass.spitfire_weapon => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.striker => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.suppressor => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.thumper => DroppedItemData(WeaponData.codec, "weapon")
+      //other weapons
+      case ObjectClass.ace_deployable => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.advanced_missile_launcher_t => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.chaingun_12mm => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.chaingun_15mm => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler_v2 => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler_v3 => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.cycler_v4 => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.dynomite => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.frag_grenade => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.generic_grenade => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.mine_sweeper => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.pellet_gun => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.six_shooter => DroppedItemData(WeaponData.codec, "weapon")
+      case ObjectClass.winchester => DroppedItemData(WeaponData.codec, "weapon")
+      //medkits
+      case ObjectClass.medkit => DroppedItemData(CommonFieldData.codec2, "medkit")
+      case ObjectClass.super_armorkit => DroppedItemData(CommonFieldData.codec2, "repair kit")
+      case ObjectClass.super_medkit => DroppedItemData(CommonFieldData.codec2, "super medkit")
+      case ObjectClass.super_staminakit => DroppedItemData(CommonFieldData.codec2, "stamina kit")
+      //tools
+      case ObjectClass.applicator => DroppedItemData(WeaponData.codec, "tool")
+      case ObjectClass.bank => DroppedItemData(WeaponData.codec, "tool")
+      case ObjectClass.command_detonater => DroppedItemData(HandheldData.codec, "tool")
+      case ObjectClass.flail_targeting_laser => DroppedItemData(HandheldData.codec, "tool")
+      case ObjectClass.medicalapplicator => DroppedItemData(WeaponData.codec, "tool")
+      case ObjectClass.nano_dispenser => DroppedItemData(WeaponData.codec, "tool")
+      case ObjectClass.remote_electronics_kit => DroppedItemData(REKData.codec, " tool")
+      case ObjectClass.trek => DroppedItemData(WeaponData.codec, "tool")
+      //deployables
+      case ObjectClass.ace => DroppedItemData(HandheldData.codec, "ace")
+      case ObjectClass.advanced_ace => DroppedItemData(HandheldData.codec, "advanced ace")
+      case ObjectClass.router_telepad => DroppedItemData(HandheldData.codec, "router telepad")
+      case ObjectClass.boomer_trigger => DroppedItemData(HandheldData.codec, "boomer trigger")
+      case ObjectClass.boomer => ConstructorData(CommonFieldDataWithPlacement.codec2, "ace deployable")
+      case ObjectClass.he_mine => ConstructorData(CommonFieldDataWithPlacement.codec2, "ace deployable")
+      case ObjectClass.jammer_mine => ConstructorData(CommonFieldDataWithPlacement.codec2, "ace deployable")
+      case ObjectClass.motionalarmsensor => ConstructorData(CommonFieldDataWithPlacement.codec2, "ace deployable")
+      case ObjectClass.sensor_shield => ConstructorData(CommonFieldDataWithPlacement.codec2, "ace deployable")
+      case ObjectClass.spitfire_aa => ConstructorData(SmallTurretData.codec, "small turret")
+      case ObjectClass.spitfire_cloaked => ConstructorData(SmallTurretData.codec, "small turret")
+      case ObjectClass.spitfire_turret => ConstructorData(SmallTurretData.codec, "small turret")
+      case ObjectClass.tank_traps => ConstructorData(TRAPData.codec, "trap")
+      case ObjectClass.deployable_shield_generator => ConstructorData(AegisShieldGeneratorData.codec, "shield generator")
+      case ObjectClass.portable_manned_turret => ConstructorData(OneMannedFieldTurretData.codec, "field turret")
+      case ObjectClass.portable_manned_turret_nc => ConstructorData(OneMannedFieldTurretData.codec, "field turret")
+      case ObjectClass.portable_manned_turret_tr => ConstructorData(OneMannedFieldTurretData.codec, "field turret")
+      case ObjectClass.portable_manned_turret_vs => ConstructorData(OneMannedFieldTurretData.codec, "field turret")
+      case ObjectClass.router_telepad_deployable => DroppedItemData(TelepadDeployableData.codec, "telepad deployable")
+      //projectiles
+      case ObjectClass.hunter_seeker_missile_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.meteor_common => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.meteor_projectile_b_large => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.meteor_projectile_b_medium => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.meteor_projectile_b_small => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.meteor_projectile_large => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.meteor_projectile_medium => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.meteor_projectile_small => ConstructorData(RemoteProjectileData.codec, "meteor")
+      case ObjectClass.phoenix_missile_guided_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.oicw_little_buddy => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.oicw_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.sparrow_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.starfire_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.striker_missile_targeting_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      case ObjectClass.wasp_rocket_projectile => ConstructorData(RemoteProjectileData.codec, "projectile")
+      //vehicles
+      case ObjectClass.ams => ConstructorData(VehicleData.codec(VehicleFormat.Utility), "ams")
+      case ObjectClass.ams_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.ant => ConstructorData(VehicleData.codec(VehicleFormat.Utility), "ant")
+      case ObjectClass.ant_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.apc_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.apc_nc => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.apc_tr => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.apc_vs => ConstructorData(VehicleData.codec, "vehicle")
+      //case ObjectClass.aphelion_destroyed => normal @ 0 health
+      case ObjectClass.aphelion_flight => ConstructorData(VehicleData.codec(VehicleFormat.Battleframe), "vehicle")
+      case ObjectClass.aphelion_gunner => ConstructorData(VehicleData.codec(VehicleFormat.Battleframe), "vehicle")
+      case ObjectClass.aurora => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.battlewagon => ConstructorData(VehicleData.codec, "vehicle")
+      //case ObjectClass.colossus_destroyed => normal @ 0 health
+      case ObjectClass.colossus_flight => ConstructorData(VehicleData.codec(VehicleFormat.Battleframe), "vehicle")
+      case ObjectClass.colossus_gunner => ConstructorData(VehicleData.codec(VehicleFormat.Battleframe), "vehicle")
+      case ObjectClass.droppod => ConstructorData(DroppodData.codec, "droppod")
+      case ObjectClass.dropship => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.dropship_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.flail => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.flail_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.fury => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.galaxy_gunship => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.liberator => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.liberator_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.lightgunship => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.lightgunship_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.lightning => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.lightning_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.lodestar => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.lodestar_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.magrider => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.magrider_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.mediumtransport => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.mediumtransport_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.mosquito => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.mosquito_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.orbital_shuttle => ConstructorData(OrbitalShuttleData.codec_pos, "HART")
+      //case ObjectClass.peregrine_destroyed => normal @ 0 health
+      case ObjectClass.peregrine_flight => ConstructorData(VehicleData.codec(VehicleFormat.Battleframe), "vehicle")
+      case ObjectClass.peregrine_gunner => ConstructorData(VehicleData.codec(VehicleFormat.Battleframe), "vehicle")
+      case ObjectClass.phantasm => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      //case ObjectClass.phantasm_destroyed => normal @ 0 health
+      case ObjectClass.prowler => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.prowler_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.quadassault => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.quadassault_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.quadstealth => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.quadstealth_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.router => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.router_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.skyguard => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.skyguard_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.switchblade => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.switchblade_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.threemanheavybuggy => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.threemanheavybuggy_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.thunderer => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.two_man_assault_buggy => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.two_man_assault_buggy_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.twomanheavybuggy => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.twomanheavybuggy_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.twomanhoverbuggy => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.twomanhoverbuggy_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.vanguard => ConstructorData(VehicleData.codec, "vehicle")
+      case ObjectClass.vanguard_destroyed => ConstructorData(DestroyedVehicleData.codec, "wreckage")
+      case ObjectClass.vulture => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      case ObjectClass.wasp => ConstructorData(VehicleData.codec(VehicleFormat.Variant), "vehicle")
+      //other
+      case ObjectClass.ams_respawn_tube => DroppedItemData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.avatar => ConstructorData(PlayerData.codec(true), "avatar")
+      case ObjectClass.capture_flag => ConstructorData(CaptureFlagData.codec, "capture flag")
+      case ObjectClass.implant_terminal_interface => ConstructorData(CommonFieldData.codec2, "implant terminal")
+      case ObjectClass.locker_container => ConstructorData(LockerContainerData.codec, "locker container")
+      case ObjectClass.matrix_terminala => DroppedItemData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.matrix_terminalb => DroppedItemData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.matrix_terminalc => DroppedItemData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.order_terminal => DroppedItemData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.order_terminala => DroppedItemData(CommonFieldData.codec2, "terminal")
+      case ObjectClass.order_terminalb => DroppedItemData(CommonFieldData.codec2, "terminal")
+      //failure case
+      case _ => defaultFailureCodec(objClass)
+    }
+
+  /**
+    * `Codec` for handling a failure case upon not finding an appropriate object `Codec`.
+    * @param cls the object class whose `Codec` we have failed to find;
+    * @return a failure
+    */
+  private def defaultFailureCodec(cls : Int) : Codec[ConstructorData] = {
+    conditional(cls == 0, bool).exmap[ConstructorData] (
+      _ => Attempt.failure(Err(s"decoding unknown object class $cls")),
+      _ => Attempt.failure(Err(s"encoding unknown object class $cls"))
+    )
   }
 }

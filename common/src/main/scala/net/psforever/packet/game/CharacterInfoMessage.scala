@@ -1,21 +1,15 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
-import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
+import net.psforever.packet.{GamePacketOpcode, Marshallable, PlanetSideGamePacket}
+import net.psforever.types.PlanetSideGUID
 import scodec.Codec
 import scodec.codecs._
-
 
 case class PlanetSideZoneID(zoneId : Long)
 
 object PlanetSideZoneID {
   implicit val codec = uint32L.as[PlanetSideZoneID]
-}
-
-case class PlanetSideGUID(guid : Int)
-
-object PlanetSideGUID {
-  implicit val codec = uint16L.as[PlanetSideGUID]
 }
 
 /**
@@ -26,7 +20,8 @@ object PlanetSideGUID {
   *
   * @param finished True when there are no more characters to give info on
   */
-final case class CharacterInfoMessage(zoneId : PlanetSideZoneID,
+final case class CharacterInfoMessage(unk : Long,
+                                      zoneId : PlanetSideZoneID,
                                       charId : Long,
                                       guid : PlanetSideGUID,
                                       finished : Boolean,
@@ -39,8 +34,8 @@ final case class CharacterInfoMessage(zoneId : PlanetSideZoneID,
 
 object CharacterInfoMessage extends Marshallable[CharacterInfoMessage] {
   implicit val codec : Codec[CharacterInfoMessage] = (
-      ("unknown" | uint32L).unit(0) :: // this type is set to unit as we dont know what it is yet
-      ("zoneId" | PlanetSideZoneID.codec) ::
+      ("unk" | uint32L) ::
+        ("zoneId" | PlanetSideZoneID.codec) ::
         ("charId" | uint32L) ::
         ("charGUID" | PlanetSideGUID.codec) ::
         ("finished" | bool) ::

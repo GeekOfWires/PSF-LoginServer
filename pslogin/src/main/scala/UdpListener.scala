@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 import java.net.{InetAddress, InetSocketAddress}
 
 import akka.actor.SupervisorStrategy.Stop
@@ -11,7 +11,7 @@ import akka.util.ByteString
 final case class ReceivedPacket(msg : ByteVector, from : InetSocketAddress)
 final case class SendPacket(msg : ByteVector, to : InetSocketAddress)
 final case class Hello()
-final case class HelloFriend(sessionId : Long, next: ActorRef)
+final case class HelloFriend(sessionId : Long, next: Iterator[ActorRef])
 
 class UdpListener(nextActorProps : Props,
                   nextActorName : String,
@@ -38,7 +38,7 @@ class UdpListener(nextActorProps : Props,
 
   var bytesRecevied = 0L
   var bytesSent = 0L
-  var nextActor : ActorRef = Actor.noSender
+  var nextActor : ActorRef = ActorRef.noSender
 
   def receive = {
     case Udp.Bound(local) =>

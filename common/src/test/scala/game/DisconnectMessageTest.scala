@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package game
 
 import org.specs2.mutable._
@@ -25,5 +25,9 @@ class DisconnectMessageTest extends Specification {
     val pkt = PacketCoding.EncodePacket(msg).require.toByteVector
 
     pkt mustEqual string
+  }
+
+  "comparison" in {
+    DisconnectMessage("First") mustEqual DisconnectMessage("First", "", "")
   }
 }

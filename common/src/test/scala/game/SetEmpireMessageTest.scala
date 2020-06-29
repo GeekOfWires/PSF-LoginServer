@@ -1,10 +1,10 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package game
 
 import org.specs2.mutable._
 import net.psforever.packet._
 import net.psforever.packet.game._
-import net.psforever.types.PlanetSideEmpire
+import net.psforever.types.{PlanetSideEmpire, PlanetSideGUID}
 import scodec.bits._
 
 class SetEmpireMessageTest extends Specification {

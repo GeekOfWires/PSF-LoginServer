@@ -1,8 +1,9 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
 import net.psforever.newcodecs.newcodecs
 import net.psforever.packet.{GamePacketOpcode, Marshallable, PlanetSideGamePacket}
+import net.psforever.types.PlanetSideGUID
 import scodec.Codec
 import scodec.codecs._
 import shapeless.{::, HNil}

@@ -8,6 +8,13 @@ out/
 *.iws
 *.ipr
 *.iml
+.bloop
+.metals
+project/metals.sbt
+
+# User configs
+config/worldserver.ini
+pslogin/src/main/resources/user.conf
 
 # Log files
 *.log

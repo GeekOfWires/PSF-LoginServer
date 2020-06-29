@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.types
 
 import net.psforever.packet.PacketHelpers
@@ -12,4 +12,13 @@ object PlanetSideEmpire extends Enumeration {
   val TR, NC, VS, NEUTRAL = Value
 
   implicit val codec = PacketHelpers.createEnumerationCodec(this, uint2L)
+
+  def apply(id : String) : PlanetSideEmpire.Value = {
+    values.find(_.toString.equals(id)) match {
+      case Some(faction) =>
+        faction
+      case None =>
+        throw new NoSuchElementException(s"can not find an empire associated with $id")
+    }
+  }
 }

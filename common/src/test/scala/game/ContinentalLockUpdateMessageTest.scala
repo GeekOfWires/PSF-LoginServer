@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package game
 
 import org.specs2.mutable._
@@ -13,7 +13,7 @@ class ContinentalLockUpdateMessageTest extends Specification {
   "decode" in {
     PacketCoding.DecodePacket(string).require match {
       case ContinentalLockUpdateMessage(continent_guid, empire) =>
-        continent_guid mustEqual PlanetSideGUID(22)
+        continent_guid mustEqual 22
         empire mustEqual PlanetSideEmpire.NC
       case _ =>
         ko
@@ -21,7 +21,7 @@ class ContinentalLockUpdateMessageTest extends Specification {
   }
 
   "encode" in {
-    val msg = ContinentalLockUpdateMessage(PlanetSideGUID(22), PlanetSideEmpire.NC)
+    val msg = ContinentalLockUpdateMessage(22, PlanetSideEmpire.NC)
     val pkt = PacketCoding.EncodePacket(msg).require.toByteVector
 
     pkt mustEqual string

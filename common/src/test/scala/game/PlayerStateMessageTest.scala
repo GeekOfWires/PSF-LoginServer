@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package game
 
 import org.specs2.mutable._
@@ -14,20 +14,20 @@ class PlayerStateMessageTest extends Specification {
 
   "decode (short)" in {
     PacketCoding.DecodePacket(string_short).require match {
-      case PlayerStateMessage(guid, pos, vel, facingYaw, facingPitch, facingUpper, unk1, crouching, jumping, unk2, unk3) =>
+      case PlayerStateMessage(guid, pos, vel, facingYaw, facingPitch, facingUpper, unk1, crouching, jumping, jthrust, cloaked) =>
         guid mustEqual PlanetSideGUID(1696)
         pos.x mustEqual 4003.7422f
         pos.y mustEqual 5981.414f
         pos.z mustEqual 44.875f
         vel.isDefined mustEqual false
-        facingYaw mustEqual 31
-        facingPitch mustEqual 0
-        facingUpper mustEqual 0
+        facingYaw mustEqual 2.8125f
+        facingPitch mustEqual 0f
+        facingUpper mustEqual 0f
         unk1 mustEqual 83
         crouching mustEqual false
         jumping mustEqual false
-        unk2 mustEqual false
-        unk3 mustEqual false
+        jthrust mustEqual false
+        cloaked mustEqual false
       case _ =>
         ko
     }
@@ -35,20 +35,20 @@ class PlayerStateMessageTest extends Specification {
 
   "decode (mod)" in {
     PacketCoding.DecodePacket(string_mod).require match {
-      case PlayerStateMessage(guid, pos, vel, facingYaw, facingPitch, facingUpper, unk1, crouching, jumping, unk2, unk3) =>
+      case PlayerStateMessage(guid, pos, vel, facingYaw, facingPitch, facingUpper, unk1, crouching, jumping, jthrust, cloaked) =>
         guid mustEqual PlanetSideGUID(1696)
         pos.x mustEqual 4003.7422f
         pos.y mustEqual 5981.414f
         pos.z mustEqual 44.875f
         vel.isDefined mustEqual false
-        facingYaw mustEqual 31
-        facingPitch mustEqual 0
-        facingUpper mustEqual 0
+        facingYaw mustEqual 2.8125f
+        facingPitch mustEqual 0f
+        facingUpper mustEqual 0f
         unk1 mustEqual 83
         crouching mustEqual false
         jumping mustEqual true
-        unk2 mustEqual false
-        unk3 mustEqual true
+        jthrust mustEqual false
+        cloaked mustEqual true
       case _ =>
         ko
     }
@@ -56,7 +56,7 @@ class PlayerStateMessageTest extends Specification {
 
   "decode (vel)" in {
     PacketCoding.DecodePacket(string_vel).require match {
-      case PlayerStateMessage(guid, pos, vel, facingYaw, facingPitch, facingUpper, unk1, crouching, jumping, unk2, unk3) =>
+      case PlayerStateMessage(guid, pos, vel, facingYaw, facingPitch, facingUpper, unk1, crouching, jumping, jthrust, cloaked) =>
         guid mustEqual PlanetSideGUID(1696)
         pos.x mustEqual 4008.6016f
         pos.y mustEqual 5987.6016f
@@ -65,14 +65,14 @@ class PlayerStateMessageTest extends Specification {
         vel.get.x mustEqual 2.53125f
         vel.get.y mustEqual 6.5625f
         vel.get.z mustEqual 0.0f
-        facingYaw mustEqual 24
-        facingPitch mustEqual 4
-        facingUpper mustEqual 0
+        facingYaw mustEqual 22.5f
+        facingPitch mustEqual -11.25f
+        facingUpper mustEqual 0f
         unk1 mustEqual 165
         crouching mustEqual false
         jumping mustEqual false
-        unk2 mustEqual false
-        unk3 mustEqual false
+        jthrust mustEqual false
+        cloaked mustEqual false
       case _ =>
         ko
     }
@@ -83,7 +83,7 @@ class PlayerStateMessageTest extends Specification {
       PlanetSideGUID(1696),
       Vector3(4003.7422f, 5981.414f, 44.875f),
       None,
-      31, 0, 0, 83,
+      2.8125f, 0f, 0f, 83,
       false, false, false, false)
     val pkt = PacketCoding.EncodePacket(msg).require.toByteVector
     pkt mustEqual string_short
@@ -94,7 +94,7 @@ class PlayerStateMessageTest extends Specification {
       PlanetSideGUID(1696),
       Vector3(4003.7422f, 5981.414f, 44.875f),
       None,
-      31, 0, 0, 83,
+      2.8125f, 0f, 0f, 83,
       false, true, false, true)
     val pkt = PacketCoding.EncodePacket(msg).require.toByteVector
     pkt mustEqual string_mod
@@ -105,7 +105,7 @@ class PlayerStateMessageTest extends Specification {
       PlanetSideGUID(1696),
       Vector3(4008.6016f, 5987.6016f, 44.1875f),
       Some(Vector3(2.53125f, 6.5625f, 0f)),
-      24, 4, 0, 165,
+      22.5f, -11.25f, 0f, 165,
       false, false, false, false)
     val pkt = PacketCoding.EncodePacket(msg).require.toByteVector
     pkt mustEqual string_vel

@@ -1,26 +1,18 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
 import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
-import net.psforever.types.PlanetSideEmpire
+import net.psforever.types.{CharacterGender, CharacterVoice, PlanetSideEmpire}
 import scodec.{Attempt, Codec, Err}
 import scodec.codecs._
 import shapeless.{::, HNil}
-
-object CharacterGender extends Enumeration(1) {
-  type Type = Value
-
-  val Male, Female = Value
-
-  implicit val codec = PacketHelpers.createEnumerationCodec(this, uint2L)
-}
 
 /**
   * Is sent by the PlanetSide client on character selection completion.
   */
 final case class CharacterCreateRequestMessage(name : String,
                                                headId : Int,
-                                               voiceId : Int,
+                                               voiceId : CharacterVoice.Value,
                                                gender : CharacterGender.Value,
                                                empire : PlanetSideEmpire.Value)
   extends PlanetSideGamePacket {
@@ -30,10 +22,12 @@ final case class CharacterCreateRequestMessage(name : String,
 }
 
 object CharacterCreateRequestMessage extends Marshallable[CharacterCreateRequestMessage] {
+  private val character_voice_codec = PacketHelpers.createEnumerationCodec(CharacterVoice, uint8)
+
   implicit val codec : Codec[CharacterCreateRequestMessage] = (
     ("name" | PacketHelpers.encodedWideString) ::
       ("headId" | uint8L) ::
-      ("voiceId" | uint8L) ::
+      ("voiceId" | character_voice_codec) ::
       ("gender" | CharacterGender.codec) ::
       ("empire" | PlanetSideEmpire.codec)
     ).exmap[CharacterCreateRequestMessage] (

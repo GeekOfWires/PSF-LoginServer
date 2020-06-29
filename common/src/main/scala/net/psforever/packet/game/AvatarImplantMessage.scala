@@ -1,58 +1,51 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
 import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
+import net.psforever.types.PlanetSideGUID
 import scodec.Codec
 import scodec.codecs._
 
 /**
-  * An `Enumeration` of the available implants.
+  * An `Enumeration` for all the actions that can be applied to implants and implant slots.
   */
-object ImplantType extends Enumeration {
+object ImplantAction extends Enumeration {
   type Type = Value
-  val AdvancedRegen,
-      Targeting,
-      AudioAmplifier,
-      DarklightVision,
-      MeleeBooster,
-      PersonalShield,
-      RangeMagnifier,
-      Unknown7,
-      SilentRun,
-      Surge = Value
 
-  implicit val codec = PacketHelpers.createEnumerationCodec(this, uint4L)
+  val
+  Add,
+  Remove,
+  Initialization,
+  Activation,
+  UnlockMessage,
+  OutOfStamina
+  = Value
+
+  implicit val codec = PacketHelpers.createEnumerationCodec(this, uintL(3))
 }
 
 /**
-  * Change the state of the implant.<br>
-  * Write better comments.
+  * Change the state of the implant.
+  * Spawn messages for certain implant-related events.<br>
   * <br>
-  * Implant:<br>
-  * `
-  * 00 - Regeneration (advanced_regen)<br>
-  * 01 - Enhanced Targeting (targeting)<br>
-  * 02 - Audio Amplifier (audio_amplifier)<br>
-  * 03 - Darklight Vision (darklight_vision)<br>
-  * 04 - Melee Booster (melee_booster)<br>
-  * 05 - Personal Shield (personal_shield)<br>
-  * 06 - Range Magnifier (range_magnifier)<br>
-  * 07 - `None`<br>
-  * 08 - Sensor Shield (silent_run)<br>
-  * 09 - Surge (surge)<br>
-  * `
-  * <br>
-  * Exploration<br>
-  * Where is Second Wind (second_wind)?
+  * The implant Second Wind is technically an invalid `ImplantType` for this packet.
+  * This owes to the unique activation trigger for that implant - a near-death experience of ~0HP.
+  * @see `ImplantType`
   * @param player_guid the player
-  * @param unk1 na
-  * @param unk2 na
-  * @param implant the implant
+  * @param action how to affect the implant or the slot
+  * @param implantSlot : from 0 to 2
+  * @param status : a value that depends on context from `ImplantAction`:<br>
+  *                 `Add` - 0-9 depending on the `ImplantType`<br>
+  *                 `Remove` - any valid value; field is not significant to this action<br>
+  *                 `Initialization` - 0 to revoke slot; 1 to allocate implant slot<br>
+  *                 `Activation` - 0 to deactivate implant; 1 to activate implant<br>
+  *                 `UnlockMessage` - 0-3 as an unlocked implant slot; display a message<br>
+  *                 `OutOfStamina` - lock implant; 0 to lock; 1 to unlock; display a message
   */
 final case class AvatarImplantMessage(player_guid : PlanetSideGUID,
-                                      unk1 : Int,
-                                      unk2 : Int,
-                                      implant : ImplantType.Value)
+                                      action : ImplantAction.Value,
+                                      implantSlot : Int,
+                                      status : Int)
   extends PlanetSideGamePacket {
   type Packet = AvatarImplantMessage
   def opcode = GamePacketOpcode.AvatarImplantMessage
@@ -62,8 +55,8 @@ final case class AvatarImplantMessage(player_guid : PlanetSideGUID,
 object AvatarImplantMessage extends Marshallable[AvatarImplantMessage] {
   implicit val codec : Codec[AvatarImplantMessage] = (
     ("player_guid" | PlanetSideGUID.codec) ::
-      ("unk1" | uintL(3)) ::
-      ("unk2" | uint2L) ::
-      ("implant" | ImplantType.codec)
+      ("action" | ImplantAction.codec) ::
+      ("implantSlot" | uint2L) ::
+      ("status" | uint4L)
     ).as[AvatarImplantMessage]
 }

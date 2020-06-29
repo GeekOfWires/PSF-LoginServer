@@ -1,10 +1,10 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package game
 
 import org.specs2.mutable._
 import net.psforever.packet._
 import net.psforever.packet.game._
-import net.psforever.types.Vector3
+import net.psforever.types.{PlanetSideGUID, Vector3}
 import scodec.bits._
 
 class PlayerStateMessageUpstreamTest extends Specification {
@@ -12,28 +12,28 @@ class PlayerStateMessageUpstreamTest extends Specification {
 
   "decode" in {
     PacketCoding.DecodePacket(string).require match {
-      case PlayerStateMessageUpstream(avatar_guid, pos, vel, unk1, aim_pitch, unk2, seq_time, unk3, is_crouching, unk4, unk5, is_cloaking, unk6, unk7) =>
+      case PlayerStateMessageUpstream(avatar_guid, pos, vel, facingYaw, facingPitch, facingYawUpper, seq_time, unk1, is_crouching, is_jumping, jump_thrust, is_cloaked, unk2, unk3) =>
         avatar_guid mustEqual PlanetSideGUID(75)
         pos mustEqual Vector3(3694.1094f, 2735.4531f, 90.84375f)
-        vel mustEqual Some(Vector3(4.375f, 2.59375f, 0.0f))
-        unk1 mustEqual 10
-        aim_pitch mustEqual 3
-        unk2 mustEqual 0
+        vel.contains(Vector3(4.375f, 2.59375f, 0.0f)) mustEqual true
+        facingYaw mustEqual 61.875f
+        facingPitch mustEqual -8.4375f
+        facingYawUpper mustEqual 0.0f
         seq_time mustEqual 136
-        unk3 mustEqual 0
+        unk1 mustEqual 0
         is_crouching mustEqual false
-        unk4 mustEqual false
-        unk5 mustEqual false
-        is_cloaking mustEqual false
-        unk6 mustEqual 112
-        unk7 mustEqual 0
+        is_jumping mustEqual false
+        jump_thrust mustEqual false
+        is_cloaked mustEqual false
+        unk2 mustEqual 112
+        unk3 mustEqual 0
       case _ =>
         ko
     }
   }
 
   "encode" in {
-    val msg = PlayerStateMessageUpstream(PlanetSideGUID(75), Vector3(3694.1094f, 2735.4531f, 90.84375f), Some(Vector3(4.375f, 2.59375f, 0.0f)), 10, 3, 0, 136, 0, false, false, false, false, 112, 0)
+    val msg = PlayerStateMessageUpstream(PlanetSideGUID(75), Vector3(3694.1094f, 2735.4531f, 90.84375f), Some(Vector3(4.375f, 2.59375f, 0.0f)), 61.875f, -8.4375f, 0.0f, 136, 0, false, false, false, false, 112, 0)
     val pkt = PacketCoding.EncodePacket(msg).require.toByteVector
 
     pkt mustEqual string

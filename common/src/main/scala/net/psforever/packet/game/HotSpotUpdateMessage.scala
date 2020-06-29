@@ -1,10 +1,12 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
 import net.psforever.newcodecs.newcodecs
 import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
+import net.psforever.types.Vector3
 import scodec.Codec
 import scodec.codecs._
+import shapeless.{::, HNil}
 
 /**
   * Information for positioning a hotspot on the continental map.<br>
@@ -27,18 +29,17 @@ final case class HotSpotInfo(x : Float,
   * The hotspot system is an all-or-nothing affair.
   * The received packet indicates the hotspots to display and the map will display only those hotspots.
   * Inversely, if the received packet indicates no hotspots, the map will display no hotspots at all.
-  * This "no hotspots" packet is always initially sent during zone setup during server login.
-  * To clear away only some hotspots, but retains others, a continental `List` would have to be pruned selectively for the client.<br>
+  * To clear away only some hotspots but retains others, a continental list would have to be pruned selectively for the client.<br>
   * <br>
   * Exploration:<br>
   * What does (zone) priority entail?
-  * @param continent_guid the zone (continent)
+  * @param zone_index the zone
   * @param priority na
   * @param spots a List of HotSpotInfo
   */
-final case class HotSpotUpdateMessage(continent_guid : PlanetSideGUID,
+final case class HotSpotUpdateMessage(zone_index : Int,
                                       priority : Int,
-                                      spots : List[HotSpotInfo] = Nil)
+                                      spots : List[HotSpotInfo])
   extends PlanetSideGamePacket {
   type Packet = HotSpotUpdateMessage
   def opcode = GamePacketOpcode.HotSpotUpdateMessage
@@ -47,9 +48,9 @@ final case class HotSpotUpdateMessage(continent_guid : PlanetSideGUID,
 
 object HotSpotInfo extends Marshallable[HotSpotInfo] {
   /*
-  the scale is technically not "correct"
-  the client is looking for a normal 0-8192 value
-  we are trying to enforce a more modest graphic scale at 128.0f
+  the client is looking for a normal 0-8192 value where default is 1.0f
+  we try to enforce a more modest graphic scale where default is 64.0f (arbitrary)
+  personally, I'd like scale to equal the sprite width in map units but the pulsation makes it hard to apply
    */
   implicit val codec : Codec[HotSpotInfo] = {
     ("x" | newcodecs.q_float(0.0, 8192.0, 20)) ::
@@ -60,8 +61,28 @@ object HotSpotInfo extends Marshallable[HotSpotInfo] {
 
 object HotSpotUpdateMessage extends Marshallable[HotSpotUpdateMessage] {
   implicit val codec : Codec[HotSpotUpdateMessage] = (
-    ("continent_guid" | PlanetSideGUID.codec) ::
+    ("zone_index" | uint16L) ::
       ("priority" | uint4L) ::
-      ("spots" | PacketHelpers.listOfNAligned(longL(8), 4, HotSpotInfo.codec))
-    ).as[HotSpotUpdateMessage]
+      ("spots" | PacketHelpers.listOfNAligned(longL(12), 0, HotSpotInfo.codec))
+    ).xmap[HotSpotUpdateMessage] (
+    {
+      case zone_index :: priority :: spots :: HNil =>
+        HotSpotUpdateMessage(zone_index, priority, spots)
+    },
+    {
+      case HotSpotUpdateMessage(zone_index, priority, spots) if spots.size > 4095 =>
+        //maximum number of points is 4095 (12-bit integer) but provided list of hotspot information is greater
+        //focus on depicting the "central" 4095 points only
+        val size = spots.size
+        val center = Vector3(
+          spots.foldLeft(0f)(_ + _.x) / size,
+          spots.foldLeft(0f)(_ + _.y) / size,
+          0
+        )
+        zone_index :: priority :: spots.sortBy(spot => Vector3.DistanceSquared(Vector3(spot.x, spot.y, 0), center)).take(4095) :: HNil
+
+      case HotSpotUpdateMessage(zone_index, priority, spots) =>
+        zone_index :: priority :: spots :: HNil
+    }
+  )
 }

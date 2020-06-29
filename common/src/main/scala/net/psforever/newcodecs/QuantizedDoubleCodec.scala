@@ -1,4 +1,4 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.newcodecs
 
 import scodec.{ Attempt, Codec, DecodeResult, Err, SizeBound }
@@ -33,7 +33,7 @@ final class QuantizedDoubleCodec(min: Double, max: Double, bits: Int) extends Co
   }
 
   def UnquantizeDouble(value : Int) : Double = {
-    return ((max - min) * value.toDouble / (1 << bitsL).toDouble + min)
+    return ((max - min) * value.toDouble / (1 << bitsL.toInt).toDouble + min)
   }
 
   override def encode(value: Double) = {

@@ -1,52 +1,30 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game.objectcreate
 
-import net.psforever.packet.{Marshallable, PacketHelpers}
+import InventoryItemData._
+import net.psforever.packet.PacketHelpers
 import scodec.Codec
 import scodec.codecs._
 import shapeless.{::, HNil}
 
 /**
-  * A representation of the inventory portion of `ObjectCreateMessage` packet data for avatars.<br>
+  * A representation of the inventory portion of `ObjectCreate*Message` packet data for avatars.<br>
   * <br>
   * The inventory is a temperamental thing.
   * Items placed into the inventory must follow their proper encoding schematics to the letter.
+  * The slot number refers to the position occupied by the item.
+  * In icon format, all-encompassing slots are absolute positions; and, grid-distributed icons use the upper-left corner.
   * No values are allowed to be misplaced and no unexpected regions of data can be discovered.
-  * If there is even a minor failure, the whole of the inventory will fail to translate.<br>
+  * If there is even a minor failure, the remainder of the inventory will fail to translate.<br>
   * <br>
-  * Under the official servers, when a new character was generated, the inventory encoded as `0x1C`.
-  * This inventory had no size field, no contents, and an indeterminate number of values.
-  * This format is no longer supported.
-  * Going forward, an empty inventory - approximately `0x10000` - should be used as substitute.<br>
-  * <br>
-  * Exploration:<br>
-  * 4u of ignored bits have been added to the end of the inventory to make up for missing stream length.
-  * They do not actually seem to be part of the inventory.
-  * Are these bits always at the end of the packet data and what is the significance?
-  * @param unk1 na;
-  *             `true` to mark the start of the inventory data?
-  *             is explicitly declaring the bit necessary when it always seems to be `true`?
-  * @param unk2 na
-  * @param unk3 na
-  * @param contents the actual items in the inventory;
-  *                  holster slots are 0-4;
-  *                  an inaccessible slot is 5;
-  *                  internal capacity is 6-`n`, where `n` is defined by exosuit type and is mapped into a grid
+  * Inventories are usually prefaced with a single bit value not accounted for here to switch them "on."
+  * @param contents the items in the inventory
+  * @see `InventoryItemData`
   */
-final case class InventoryData(unk1 : Boolean,
-                               unk2 : Boolean,
-                               unk3 : Boolean,
-                               contents : List[InventoryItem]) extends StreamBitSize {
-  /**
-    * Performs a "sizeof()" analysis of the given object.
-    * @see ConstructorData.bitsize
-    * @return the number of bits necessary to represent this object
-    */
+final case class InventoryData(contents : List[InventoryItem] = List.empty) extends StreamBitSize {
   override def bitsize : Long = {
-    //three booleans, the 4u extra, and the 8u length field
-    val base : Long = 15L
-    //length of all items in inventory
-    var invSize : Long = 0L
+    val base : Long = InventoryData.BaseSize
+    var invSize : Long = 0L //length of all items in inventory
     for(item <- contents) {
       invSize += item.bitsize
     }
@@ -54,23 +32,37 @@ final case class InventoryData(unk1 : Boolean,
   }
 }
 
-object InventoryData extends Marshallable[InventoryData] {
-  implicit val codec : Codec[InventoryData] = (
-    ("unk1" | bool) ::
-      (("len" | uint8L) >>:~ { len =>
-        ("unk2" | bool) ::
-          ("unk3" | bool) ::
-          ("contents" | PacketHelpers.listOfNSized(len, InventoryItem.codec)) ::
-          ignore(4)
-      })
-    ).xmap[InventoryData] (
+object InventoryData {
+  final val BaseSize : Long = 10L //8u + 1u + 1u
+
+  /**
+    * The primary `Codec` that parses the common format for an inventory `List`.
+    * @param itemCodec a `Codec` that describes each of the contents of the list
+    * @return an `InventoryData` object, or a `BitVector`
+    */
+  def codec(itemCodec : Codec[InventoryItem]) : Codec[InventoryData] = (
+    uint8L >>:~ { len =>
+      uint2L ::
+        ("contents" | PacketHelpers.listOfNSized(len, itemCodec))
+    }
+  ).xmap[InventoryData] (
     {
-      case u1 :: _ :: a :: b :: ctnt :: _ :: HNil =>
-        InventoryData(u1, a, b, ctnt)
+      case _ :: 0 :: c :: HNil =>
+        InventoryData(c)
     },
     {
-      case InventoryData(u1, a, b, ctnt) =>
-        u1 :: ctnt.size :: a :: b :: ctnt :: () :: HNil
+      case InventoryData(c) =>
+        c.size :: 0 :: c :: HNil
     }
-  ).as[InventoryData]
+  )
+
+  /**
+    * A `Codec` for `0x17` `ObjectCreateMessage` data.
+    */
+  val codec : Codec[InventoryData] = codec(InventoryItemData.codec)
+
+  /**
+    * A `Codec` for `0x18` `ObjectCreateDetailedMessage` data.
+    */
+  val codec_detailed : Codec[InventoryData] = codec(InventoryItemData.codec_detailed)
 }

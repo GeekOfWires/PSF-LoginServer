@@ -1,10 +1,18 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 package net.psforever.packet.game
 
 import net.psforever.packet.{GamePacketOpcode, Marshallable, PacketHelpers, PlanetSideGamePacket}
+import net.psforever.types.PlanetSideGUID
 import scodec.Codec
 import scodec.codecs._
 
+/**
+  *
+  * @param object_guid the target object
+  * @param state the state code
+  *              16 - open door
+  *              17 - close door
+  */
 final case class GenericObjectStateMsg(object_guid : PlanetSideGUID,
                                        state : Long)
   extends PlanetSideGamePacket {

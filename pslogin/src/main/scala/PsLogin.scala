@@ -1,35 +1,47 @@
-// Copyright (c) 2016 PSForever.net to present
+// Copyright (c) 2017 PSForever
 import java.net.InetAddress
 import java.io.File
 import java.util.Locale
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.routing.RandomPool
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.joran.spi.JoranException
 import ch.qos.logback.core.status._
 import ch.qos.logback.core.util.StatusPrinter
 import com.typesafe.config.ConfigFactory
+import net.psforever.config.{Invalid, Valid}
 import net.psforever.crypto.CryptoInterface
+import net.psforever.objects.Default
+import net.psforever.objects.zones._
+import net.psforever.objects.guid.TaskResolver
+import net.psforever.psadmin.PsAdminActor
+import net.psforever.WorldConfig
 import org.slf4j
 import org.fusesource.jansi.Ansi._
 import org.fusesource.jansi.Ansi.Color._
+import services.ServiceManager
+import services.account.{AccountIntermediaryService, AccountPersistenceService}
+import services.chat.ChatService
+import services.galaxy.GalaxyService
+import services.teamwork.SquadService
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
-
+import kamon.Kamon
+import services.properties.PropertyOverrideManager
 
 object PsLogin {
   private val logger = org.log4s.getLogger
 
   var args : Array[String] = Array()
-  var config : java.util.Map[String,Object] = null
-  var system : akka.actor.ActorSystem = null
-  var loginRouter : akka.actor.Props = null
-  var worldRouter : akka.actor.Props = null
-  var loginListener : akka.actor.ActorRef = null
-  var worldListener : akka.actor.ActorRef = null
+  implicit var system : ActorSystem = null
+  var loginRouter : Props = Props.empty
+  var worldRouter : Props = Props.empty
+  var loginListener : ActorRef = ActorRef.noSender
+  var worldListener : ActorRef = ActorRef.noSender
 
   def banner() : Unit = {
     println(ansi().fgBright(BLUE).a("""   ___  ________"""))
@@ -43,9 +55,25 @@ object PsLogin {
 
   /** Grabs the most essential system information and returns it as a preformatted string */
   def systemInformation : String = {
+    val procNum = Runtime.getRuntime.availableProcessors();
+    val processorString = if(procNum == 1) {
+      "Detected 1 available logical processor"
+    }
+    else {
+      s"Detected $procNum available logical processors"
+    }
+
+    val freeMemory = Runtime.getRuntime.freeMemory() / 1048576;
+    // how much memory has been allocated out of the maximum that can be
+    val totalMemory = Runtime.getRuntime.totalMemory() / 1048576;
+    // the maximum amount of memory that the JVM can hold before OOM errors
+    val maxMemory = Runtime.getRuntime.maxMemory() / 1048576;
+
     s"""|~~~ System Information ~~~
-       |${System.getProperty("os.name")} (v. ${System.getProperty("os.version")}, ${System.getProperty("os.arch")})
-       |${System.getProperty("java.vm.name")} (build ${System.getProperty("java.version")}), ${System.getProperty("java.vendor")} - ${System.getProperty("java.vendor.url")}
+       |SYS: ${System.getProperty("os.name")} (v. ${System.getProperty("os.version")}, ${System.getProperty("os.arch")})
+       |CPU: $processorString
+       |MEM: ${maxMemory}MB available to the JVM (tune with -Xmx flag)
+       |JVM: ${System.getProperty("java.vm.name")} (build ${System.getProperty("java.version")}), ${System.getProperty("java.vendor")} - ${System.getProperty("java.vendor.url")}
     """.stripMargin
   }
 
@@ -85,13 +113,40 @@ object PsLogin {
       configurator.doConfigure(logfile)
     }
     catch {
-      case je : JoranException => ;
+      case _ : JoranException => ;
     }
 
     if(loggerHasErrors(lc)) {
       println("Loading log settings failed")
       StatusPrinter.printInCaseOfErrorsOrWarnings(lc)
       sys.exit(1)
+    }
+  }
+
+  def loadConfig(configDirectory : String) = {
+    val worldConfigFile = configDirectory + File.separator + "worldserver.ini"
+    // For fallback when no user-specific config file has been created
+    val worldDefaultConfigFile = configDirectory + File.separator + "worldserver.ini.dist"
+
+    val worldConfigToLoad = if ((new File(worldConfigFile)).exists()) {
+      worldConfigFile
+    } else if ((new File(worldDefaultConfigFile)).exists()) {
+      println("WARNING: loading the default worldserver.ini.dist config file")
+      println("WARNING: Please create a worldserver.ini file to override server defaults")
+
+      worldDefaultConfigFile
+    } else {
+      println("FATAL: unable to load any worldserver.ini file")
+      sys.exit(1)
+    }
+
+    WorldConfig.Load(worldConfigToLoad) match {
+      case Valid =>
+        println("Loaded world config from " + worldConfigToLoad)
+      case i : Invalid =>
+        println("FATAL: Error loading config from " + worldConfigToLoad)
+        println(WorldConfig.FormatErrors(i).mkString("\n"))
+        sys.exit(1)
     }
   }
 
@@ -118,8 +173,14 @@ object PsLogin {
       configDirectory = System.getProperty("prog.home") + File.separator + "config"
     }
 
-    initializeLogging(configDirectory + File.separator + "logback.xml")
     parseArgs(this.args)
+
+    val loggingConfigFile = configDirectory + File.separator + "logback.xml"
+
+    loadConfig(configDirectory)
+
+    println(s"Initializing logging from $loggingConfigFile")
+    initializeLogging(loggingConfigFile)
 
     /** Initialize the PSCrypto native library
       *
@@ -128,6 +189,7 @@ object PsLogin {
       * cryptographic primitives (MD5MAC). See https://github.com/psforever/PSCrypto for more information.
       */
     try {
+      logger.info("Initializing PSCrypto")
       CryptoInterface.initialize()
       logger.info("PSCrypto initialized")
     }
@@ -144,24 +206,29 @@ object PsLogin {
         sys.exit(1)
     }
 
-    // TODO: pluralize "processors"
-    logger.info(s"Detected ${Runtime.getRuntime.availableProcessors()} available logical processors")
-    logger.info("Starting actor subsystems...")
+    logger.info("Testing database connection")
+    Database.testConnection match {
+      case scala.util.Failure(e) =>
+        logger.error("Unable to connect to the database")
+        sys.exit(1)
+      case _ =>
+    }
 
-    /** Make sure we capture Akka messages (but only INFO and above)
-      *
-      * This same config can be specified in a configuration file, but that's more work at this point.
-      * In the future we will have a unified configuration file specific to this server
-      */
-    config = Map(
-      "akka.loggers" -> List("akka.event.slf4j.Slf4jLogger").asJava,
-      "akka.loglevel" -> "INFO",
-      "akka.logging-filter" -> "akka.event.slf4j.Slf4jLoggingFilter"
-    ).asJava
+    WorldConfig.Get[Boolean]("kamon.Active") match {
+      case true =>
+        logger.info("Starting Kamon")
+
+        Kamon.init()
+      case _ => ;
+    }
+
+    logger.info("Starting actor subsystems")
 
     /** Start up the main actor system. This "system" is the home for all actors running on this server */
-    system = ActorSystem("PsLogin", ConfigFactory.parseMap(config))
+    system = ActorSystem("PsLogin")
+    Default(system)
 
+    logger.info("Starting actor pipelines")
     /** Create pipelines for the login and world servers
       *
       * The first node in the pipe is an Actor that handles the crypto for protecting packets.
@@ -173,33 +240,55 @@ object PsLogin {
       */
     val loginTemplate = List(
       SessionPipeline("crypto-session-", Props[CryptoSessionActor]),
+      SessionPipeline("packet-session-", Props[PacketCodingActor]),
       SessionPipeline("login-session-", Props[LoginSessionActor])
     )
     val worldTemplate = List(
       SessionPipeline("crypto-session-", Props[CryptoSessionActor]),
+      SessionPipeline("packet-session-", Props[PacketCodingActor]),
       SessionPipeline("world-session-", Props[WorldSessionActor])
     )
 
-    val loginServerPort = 51000
-    val worldServerPort = 51001
+    val loginServerPort = WorldConfig.Get[Int]("loginserver.ListeningPort")
+    val worldServerPort = WorldConfig.Get[Int]("worldserver.ListeningPort")
+    val psAdminPort = WorldConfig.Get[Int]("psadmin.ListeningPort")
 
+    val netSim : Option[NetworkSimulatorParameters] = WorldConfig.Get[Boolean]("developer.NetSim.Active") match {
+      case true =>
+        val params = NetworkSimulatorParameters(
+          WorldConfig.Get[Float]("developer.NetSim.Loss"),
+          WorldConfig.Get[Duration]("developer.NetSim.Delay").toMillis,
+          WorldConfig.Get[Float]("developer.NetSim.ReorderChance"),
+          WorldConfig.Get[Duration]("developer.NetSim.ReorderTime").toMillis
+        )
+        logger.warn("NetSim is active")
+        logger.warn(params.toString)
+        Some(params)
+      case false => None
+    }
 
-    // Uncomment for network simulation
-    // TODO: make this config or command flag
-    /*
-    val netParams = NetworkSimulatorParameters(
-      packetLoss = 0.02,
-      packetDelay = 500,
-      packetReorderingChance = 0.005,
-      packetReorderingTime = 400
-    )
-    */
+    logger.info("Creating continents")
+    val continentList = createContinents()
 
+    logger.info("Initializing ServiceManager")
+    val serviceManager = ServiceManager.boot
+    serviceManager ! ServiceManager.Register(Props[AccountIntermediaryService], "accountIntermediary")
+    serviceManager ! ServiceManager.Register(RandomPool(150).props(Props[TaskResolver]), "taskResolver")
+    serviceManager ! ServiceManager.Register(Props[ChatService], "chat")
+    serviceManager ! ServiceManager.Register(Props[GalaxyService], "galaxy")
+    serviceManager ! ServiceManager.Register(Props[SquadService], "squad")
+    serviceManager ! ServiceManager.Register(Props(classOf[InterstellarCluster], continentList), "cluster")
+    serviceManager ! ServiceManager.Register(Props[AccountPersistenceService], "accountPersistence")
+    serviceManager ! ServiceManager.Register(Props[PropertyOverrideManager], "propertyOverrideManager")
+
+    logger.info("Initializing loginRouter & worldRouter")
     /** Create two actors for handling the login and world server endpoints */
     loginRouter = Props(new SessionRouter("Login", loginTemplate))
     worldRouter = Props(new SessionRouter("World", worldTemplate))
-    loginListener = system.actorOf(Props(new UdpListener(loginRouter, "login-session-router", LoginConfig.serverIpAddress, loginServerPort, None)), "login-udp-endpoint")
-    worldListener = system.actorOf(Props(new UdpListener(worldRouter, "world-session-router", LoginConfig.serverIpAddress, worldServerPort, None)), "world-udp-endpoint")
+    loginListener = system.actorOf(Props(new UdpListener(loginRouter, "login-session-router", LoginConfig.serverIpAddress, loginServerPort, netSim)), "login-udp-endpoint")
+    worldListener = system.actorOf(Props(new UdpListener(worldRouter, "world-session-router", LoginConfig.serverIpAddress, worldServerPort, netSim)), "world-udp-endpoint")
+
+    val adminListener = system.actorOf(Props(new TcpListener(classOf[PsAdminActor], "psadmin-client-", InetAddress.getLoopbackAddress, psAdminPort)), "psadmin-tcp-endpoint")
 
     logger.info(s"NOTE: Set client.ini to point to ${LoginConfig.serverIpAddress.getHostAddress}:$loginServerPort")
 
@@ -210,12 +299,22 @@ object PsLogin {
     }
   }
 
+  def createContinents() : List[Zone] = {
+    import Zones._
+    List(
+      Zone.Nowhere,
+      z1, z2, z3, z4, z5, z6, z7, z8, z9, z10,
+      home1, tzshtr, tzdrtr, tzcotr,
+      home2, tzshnc, tzdrnc, tzconc,
+      home3, tzshvs, tzdrvs, tzcovs,
+      c1, c2, c3, c4, c5, c6,
+      i1, i2, i3, i4
+    )
+  }
+
   def main(args : Array[String]) : Unit = {
     Locale.setDefault(Locale.US); // to have floats with dots, not comma...
     this.args = args
     run()
-
-    // Wait forever until the actor system shuts down
-    Await.result(system.whenTerminated, Duration.Inf)
   }
 }
