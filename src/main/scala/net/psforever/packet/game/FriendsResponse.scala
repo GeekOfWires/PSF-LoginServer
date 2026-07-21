@@ -74,18 +74,19 @@ object FriendsResponse extends Marshallable[FriendsResponse] {
     * @return a list of `FriendResponse` packets
     */
   def packetSequence(action: MemberAction.Value, friends: List[Friend]): List[FriendsResponse] = {
-    val lists = friends.grouped(15)
+    //`List.grouped` returns an Iterator, and `Iterator.size` traverses and exhausts it.
+    //Materialise the groups first: previously every subsequent take/slice/drop operated on an
+    //already-drained iterator, so `next()` threw NoSuchElementException for any list that produced
+    //more than one group - which killed the session actor and made login impossible for any avatar
+    //with 16 or more friends or ignored players.
+    val lists = friends.grouped(15).toList
     val size = lists.size
     if (size <= 1) {
       List(FriendsResponse(action, unk1=0, first_entry=true, last_entry=true, friends))
     } else {
-      val size1 = size - 1
-      val first = lists.take(1)
-      val rest = lists.slice(1, size1)
-      val last = lists.drop(size1)
-      List(FriendsResponse(action, unk1=0, first_entry=true, last_entry=false, first.next())) ++
-        rest.map { FriendsResponse(action, unk1=0, first_entry=false, last_entry=false, _)} ++
-        List(FriendsResponse(action, unk1=0, first_entry=false, last_entry=true, last.next()))
+      List(FriendsResponse(action, unk1=0, first_entry=true, last_entry=false, lists.head)) ++
+        lists.slice(1, size - 1).map { FriendsResponse(action, unk1=0, first_entry=false, last_entry=false, _) } ++
+        List(FriendsResponse(action, unk1=0, first_entry=false, last_entry=true, lists.last))
     }
   }
 
