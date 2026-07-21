@@ -3270,9 +3270,13 @@ class AvatarActor(
                                    account: Account,
                                    name: String,
                                    foundCharacters: IterableOnce[(Int, Boolean, Long)]): Unit = {
-    val foundCharactersIterator = foundCharacters.iterator
-    if (foundCharactersIterator.exists { case (_, deleted, _ ) => !deleted } ||
-      foundCharactersIterator.exists { case (accountId, _, _) => accountId != account.id }) {
+    //Materialise before testing: `Iterator.exists` is terminal, so when the first test returned
+    //false it had already drained the iterator and the ownership test below could never fire.
+    //That let a player "create" a character using a name another account had deleted - the server
+    //replied Pass, and the character never appeared in their list.
+    val foundCharactersList = foundCharacters.iterator.toList
+    if (foundCharactersList.exists { case (_, deleted, _ ) => !deleted } ||
+      foundCharactersList.exists { case (accountId, _, _) => accountId != account.id }) {
       //send "char already exists"
       sessionActor ! SessionActor.SendResponse(ActionResultMessage.Fail(error = 1))
     } else {
