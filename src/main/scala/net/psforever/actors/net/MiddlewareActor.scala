@@ -481,19 +481,29 @@ class MiddlewareActor(
           PacketCoding.unmarshalPacket(msg, crypto) match {
             case Successful((Ignore(data), _)) =>
               log.info(s"caught CryptoPacket Ignore with hex - $data")
+              Behaviors.same
             case Successful((packet, Some(sequence))) =>
+              //sequenced packets are resolved through the reordering machinery, which is Unit-typed
+              //and cannot propagate a behaviour; terminal control packets arrive unsequenced (raw
+              //ControlPackets decode to a `None` sequence) and are handled below
               activeSequenceFunc(packet, sequence)
+              Behaviors.same
             case Successful((packet, None)) =>
               packet match {
                 case _: PlanetSideResetSequencePacket =>
                   log.info(s"ResetSequence: ${msg.toHex}, inSeq: $inSequence, outSeq: $outSequence")
                 case _ => ()
               }
+              //Honour the behaviour `in` returns - it stops the actor for ConnectionClose and
+              //TeardownConnection. This result was previously discarded and `Behaviors.same` returned
+              //unconditionally, so a client-initiated disconnect only echoed a close packet and never
+              //tore the session down; the MiddlewareActor and its SessionActor lingered until the
+              //socket reaper collected them ~60s later, and an immediate reconnect raced the ghost.
               in(packet)
             case Failure(e) =>
               log.error(s"Could not decode $connectionId's packet: $e")
+              Behaviors.same
           }
-          Behaviors.same
 
         case Send(packet) =>
           out(packet)
@@ -609,7 +619,15 @@ class MiddlewareActor(
             connectionClose()
 
           case ClientStart(_) =>
-            start()
+            /*
+            Re-entering `start()` would restart the crypto handshake, but none of the handshake state
+            is reset: `serverMACBuffer` is only ever appended to, and `crypto`, the sequence/subslot
+            counters and the SMP history all persist. `ServerFinished` would then be computed over
+            both handshakes' MAC data and the client would reject it. Until that state reset exists,
+            keep the previous effective behaviour (ignore) rather than hard-failing the connection.
+            */
+            log.warn("ClientStart received mid-session; re-handshake is unsupported (handshake state is not reset)")
+            Behaviors.same
 
           case ClientHotStart(_, _) =>
             /*
@@ -617,7 +635,10 @@ class MiddlewareActor(
             When not handling it, it appears that the client will fall back to using ClientStart
             Do we need to implement this?
             */
-            connectionClose()
+            //This previously returned a close behaviour that was discarded, so it was effectively
+            //ignored. Preserve that until the re-handshake path above is supported.
+            log.warn("ClientHotStart received; not implemented, ignoring")
+            Behaviors.same
 
           case other =>
             log.warn(s"Unhandled control packet '$other'")
